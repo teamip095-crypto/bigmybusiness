@@ -520,3 +520,29 @@ Stage Summary:
 - Smooth volume fade-out over the last 2.5s preserved
 - Dev server restarted (was the reason the user saw "nothing")
 - Website fully functional, lint clean, no errors
+
+---
+Task ID: 13
+Agent: Main Orchestrator
+Task: Production hardening + smoke test. Fix the "0" showing in stats after publish. Ensure mobile UI is clear — nothing cut off or overlapping.
+
+Work Log:
+- Root cause of "0" bug: AnimatedCounter gated its animation on framer-motion's `useInView(ref, { once: true, margin: "-60px" })`. On mobile (390×844), the hero mini-stats sit near the viewport bottom edge, and the `-60px` margin meant the IntersectionObserver never fired → display stayed at 0. In production this was even less reliable (hydration/timing).
+- Rewrote animated-counter.tsx to be production-safe:
+  - Removed `useInView` gate entirely; animates on mount via requestAnimationFrame (easeOutExpo) — guarantees the count-up runs regardless of viewport/scroll position.
+  - Clamps to the exact final value at the end (avoids float rounding leaving 0.999).
+  - Added a safety-net setTimeout (duration + 400ms) that forces display = value if rAF is throttled/backgrounded — NEVER stuck at 0.
+  - Removed the now-unused `useInView` import and ref.
+- Mobile smoke test at 390×844: captured hero, benefits, events, awards, testimonials, footer individually. VLM checked each — ALL reported "CLEAN" (no text cut off, no overlaps, no horizontal overflow). The earlier "issues" seen in the full-page stitched screenshot were false positives from stitching; per-section views confirmed clean.
+- Production smoke test: page HTTP 200, no console errors, no warnings, lint clean. Stats DOM verified: hero shows "3" (States) + "320+" (Categories); results grid shows "3" + "320+" — no more 0.
+
+Verification (Agent Browser):
+- Hero stats DOM: ["3","320+","320+ categories"] ✓ (was 0)
+- Results grid DOM: ["Build Your City Chapter","3","320+","Build Your City Chapter"] ✓
+- Mobile (390px) per-section VLM: hero/benefits/events/awards/testimonials/footer all "CLEAN" ✓
+- No console errors, lint clean, HTTP 200
+
+Stage Summary:
+- AnimatedCounter made production-safe (animate-on-mount + final-value clamp + safety-net timer) — stats now always show real values, never 0, even on mobile or after publish
+- Mobile UI verified clean across every section (no cutoffs/overlaps) via per-section VLM at 390px
+- Full smoke test passed: no errors, lint clean, HTTP 200, golden paths (contact form, BuildCityChapter CTA) intact from earlier

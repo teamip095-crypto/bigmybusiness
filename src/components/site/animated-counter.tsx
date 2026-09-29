@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useInView } from "framer-motion";
+import { useEffect, useState } from "react";
 
 type Props = {
   value: number;
@@ -12,6 +11,14 @@ type Props = {
   decimals?: number;
 };
 
+/**
+ * Production-safe animated counter.
+ *
+ * Counts up from 0 → value on mount using requestAnimationFrame (easeOutExpo).
+ * A fallback timer guarantees the final value is shown even if rAF is throttled
+ * or the component never enters the viewport — so it NEVER stays stuck at 0
+ * (the bug that appeared after publish).
+ */
 export function AnimatedCounter({
   value,
   suffix = "",
@@ -20,25 +27,37 @@ export function AnimatedCounter({
   className,
   decimals = 0,
 }: Props) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
   const [display, setDisplay] = useState(0);
 
   useEffect(() => {
-    if (!inView) return;
-    let raf = 0;
-    const start = performance.now();
-    const animate = (now: number) => {
-      const elapsed = now - start;
-      const t = Math.min(elapsed / duration, 1);
-      // easeOutExpo for a snappy finish
-      const eased = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-      setDisplay(eased * value);
-      if (t < 1) raf = requestAnimationFrame(animate);
-    };
-    raf = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(raf);
-  }, [inView, value, duration]);
+  let raf = 0;
+  let done = false;
+  const start = performance.now();
+  const animate = (now: number) => {
+    const t = Math.min((now - start) / duration, 1);
+    // easeOutExpo for a snappy finish
+    const eased = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    setDisplay(eased * value);
+    if (t < 1) {
+      raf = requestAnimationFrame(animate);
+    } else {
+      done = true;
+      setDisplay(value); // clamp to exact final value (avoid float rounding)
+    }
+  };
+  raf = requestAnimationFrame(animate);
+
+  // Safety net: if rAF is throttled/bg-tabbed and never completes, force the
+  // final value shortly after the expected duration.
+  const fallback = window.setTimeout(() => {
+    if (!done) setDisplay(value);
+  }, duration + 400);
+
+  return () => {
+    cancelAnimationFrame(raf);
+    window.clearTimeout(fallback);
+  };
+}, [value, duration]);
 
   const formatted =
     decimals > 0
@@ -46,7 +65,7 @@ export function AnimatedCounter({
       : Math.round(display).toLocaleString("en-IN");
 
   return (
-    <span ref={ref} className={className}>
+    <span className={className}>
       {prefix}
       {formatted}
       {suffix}
