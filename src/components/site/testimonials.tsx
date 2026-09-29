@@ -7,6 +7,7 @@ import { Quote, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TESTIMONIALS } from "@/lib/site-data";
 import { SectionEyebrow } from "./journey";
+import { Spotlight } from "./spotlight";
 
 const fade = {
   hidden: { opacity: 0, y: 28 },
@@ -45,7 +46,7 @@ export function Testimonials() {
       <div className="absolute -top-32 -left-24 w-96 h-96 rounded-full bg-brand-red/20 blur-3xl" />
       <div className="absolute -bottom-32 -right-24 w-96 h-96 rounded-full bg-brand-red/15 blur-3xl" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
+      <Spotlight className="relative mx-auto max-w-7xl px-4 sm:px-6" color="rgba(211,33,33,0.16)" size={420}>
         <motion.div
           initial="hidden"
           whileInView="show"
@@ -149,7 +150,7 @@ export function Testimonials() {
             </div>
           </div>
         </div>
-      </div>
+      </Spotlight>
     </section>
   );
 }

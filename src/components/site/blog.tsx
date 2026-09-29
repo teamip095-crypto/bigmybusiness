@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { BLOG_POSTS, type BlogPost } from "@/lib/site-data";
 import { SectionEyebrow } from "./journey";
+import { TiltCard } from "./tilt-card";
 
 const fade = {
   hidden: { opacity: 0, y: 26 },
@@ -63,27 +64,33 @@ export function Blog() {
           className="mt-10 grid lg:grid-cols-3 gap-5 lg:gap-6"
         >
           {BLOG_POSTS.map((post, i) => (
-            <motion.article
+            <motion.div
               key={post.title}
               variants={{ hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0 } }}
-              whileHover={{ y: -6 }}
-              className="group relative flex flex-col rounded-2xl border border-black/5 bg-white hover:shadow-brand-sm hover:border-brand-red/30 transition-all overflow-hidden cursor-pointer"
-              onClick={() => setActive(post)}
+              style={{ transformStyle: "preserve-3d" }}
             >
-              {/* visual header */}
-              <div className="relative h-44 overflow-hidden">
-                <Image
-                  src={post.image}
-                  alt={post.title}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 33vw"
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-black/85 via-brand-black/25 to-transparent" />
-                <span className="absolute top-4 left-4 inline-flex items-center rounded-full bg-brand-red px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-white shadow-md">
-                  {post.category}
-                </span>
-                <div className="absolute bottom-3 right-4 font-serif-display text-5xl font-black text-white/20 leading-none">
+              <TiltCard
+                max={5}
+                className="group relative h-full rounded-2xl"
+              >
+                <article
+                  onClick={() => setActive(post)}
+                  className="relative flex flex-col rounded-2xl border border-black/5 bg-white hover:shadow-brand-sm hover:border-brand-red/30 transition-colors overflow-hidden cursor-pointer h-full"
+                >
+                  {/* visual header */}
+                  <div className="relative h-44 overflow-hidden">
+                    <Image
+                      src={post.image}
+                      alt={post.title}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 33vw"
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-brand-black/85 via-brand-black/25 to-transparent" />
+                    <span className="absolute top-4 left-4 inline-flex items-center rounded-full bg-brand-red px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-white shadow-md">
+                      {post.category}
+                    </span>
+                    <div className="absolute bottom-3 right-4 font-serif-display text-5xl font-black text-white/20 leading-none">
                   0{i + 1}
                 </div>
                 <ArrowUpRight className="absolute top-4 right-4 h-5 w-5 text-white/80 group-hover:text-white group-hover:rotate-12 transition-all" />
@@ -114,7 +121,9 @@ export function Blog() {
                   </span>
                 </div>
               </div>
-            </motion.article>
+                </article>
+              </TiltCard>
+            </motion.div>
           ))}
         </motion.div>
       </div>

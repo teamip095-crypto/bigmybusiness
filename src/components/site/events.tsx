@@ -7,6 +7,9 @@ import { CalendarDays, Clock, MapPin, ArrowRight, Video, Users2 } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { EVENTS, type EventItem } from "@/lib/site-data";
 import { SectionEyebrow } from "./journey";
+import { Spotlight } from "./spotlight";
+import { Magnetic } from "./magnetic";
+import { TiltCard } from "./tilt-card";
 
 const fade = {
   hidden: { opacity: 0, y: 28 },
@@ -68,26 +71,29 @@ export function Events() {
 function EventCard({ ev }: { ev: EventItem }) {
   const online = ev.type === "Online";
   return (
-    <motion.article
+    <motion.div
       variants={{
         hidden: { opacity: 0, y: 24 },
         show: { opacity: 1, y: 0 },
       }}
-      whileHover={{ y: -6 }}
-      className="group relative rounded-2xl bg-white border border-black/5 hover:border-brand-red/30 hover:shadow-brand transition-all overflow-hidden flex"
+      style={{ transformStyle: "preserve-3d" }}
     >
-      {/* image */}
-      <div className="relative shrink-0 w-32 sm:w-44 lg:w-52 overflow-hidden">
-        <Image
-          src={ev.image}
-          alt={ev.title}
-          fill
-          sizes="(max-width: 640px) 128px, (max-width: 1024px) 176px, 208px"
-          className="object-cover transition-transform duration-700 group-hover:scale-110"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/95 group-hover:to-white/85 transition-colors" />
-        {/* type badge on image */}
-        <div className="absolute top-3 left-3 rounded-xl bg-brand-black/90 backdrop-blur text-white px-2.5 py-1.5 text-center shadow-lg">
+      <TiltCard
+        max={4}
+        className="group relative rounded-2xl bg-white border border-black/5 hover:border-brand-red/30 hover:shadow-brand transition-colors overflow-hidden flex h-full"
+      >
+        {/* image */}
+        <div className="relative shrink-0 w-32 sm:w-44 lg:w-52 overflow-hidden">
+          <Image
+            src={ev.image}
+            alt={ev.title}
+            fill
+            sizes="(max-width: 640px) 128px, (max-width: 1024px) 176px, 208px"
+            className="object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/95 group-hover:to-white/85 transition-colors" />
+          {/* type badge on image */}
+          <div className="absolute top-3 left-3 rounded-xl bg-brand-black/90 backdrop-blur text-white px-2.5 py-1.5 text-center shadow-lg">
           <p className="text-[10px] font-semibold uppercase tracking-wider">
             {online ? "Online" : "In Person"}
           </p>
@@ -141,7 +147,8 @@ function EventCard({ ev }: { ev: EventItem }) {
           </Link>
         </Button>
       </div>
-    </motion.article>
+      </TiltCard>
+    </motion.div>
   );
 }
 
@@ -150,7 +157,7 @@ export function AwardsBand() {
     <section id="awards" className="relative py-16 lg:py-20 bg-brand-black text-white overflow-hidden">
       <div className="absolute inset-0 bg-grid-dark opacity-40" />
       <div className="absolute -top-24 right-1/4 w-72 h-72 rounded-full bg-brand-red/20 blur-3xl" />
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
+      <Spotlight className="relative mx-auto max-w-7xl px-4 sm:px-6" color="rgba(211,33,33,0.16)" size={420}>
         <motion.div
           initial="hidden"
           whileInView="show"
@@ -196,18 +203,20 @@ export function AwardsBand() {
         </motion.div>
 
         <div className="mt-10 text-center">
-          <Button
-            asChild
-            size="lg"
-            className="bg-brand-red text-white hover:bg-brand-red/90 font-semibold h-12 px-7 shadow-brand"
-          >
-            <Link href="#contact">
-              Nominate for awards
-              <ArrowRight className="h-5 w-5 ml-2" />
-            </Link>
-          </Button>
+          <Magnetic strength={0.3}>
+            <Button
+              asChild
+              size="lg"
+              className="bg-brand-red text-white hover:bg-brand-red/90 font-semibold h-12 px-7 shadow-brand"
+            >
+              <Link href="#contact">
+                Nominate for awards
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Link>
+            </Button>
+          </Magnetic>
         </div>
-      </div>
+      </Spotlight>
     </section>
   );
 }

@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AnimatedCounter } from "./animated-counter";
 import { BuildCityChapterCard } from "./build-city-chapter";
+import { Magnetic } from "./magnetic";
 import { HERO_STATS, PARTNER_CATEGORIES } from "@/lib/site-data";
 
 const container = {
@@ -96,28 +97,32 @@ export function Hero() {
               variants={item}
               className="mt-8 flex flex-wrap items-center gap-3"
             >
-              <Button
-                asChild
-                size="lg"
-                className="bg-brand-red text-white hover:bg-brand-red/90 font-semibold h-12 px-7 text-base shadow-brand group"
-              >
-                <Link href="#memberships">
-                  Join Privilege Membership
-                  <ArrowRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="h-12 px-6 text-base font-semibold border-2 border-black/15 hover:border-brand-red hover:text-brand-red bg-white"
-              >
-                <Link href="#memberships">
-                  <span className="text-brand-red font-bold">₹9,999</span>
-                  <span className="text-muted-foreground font-normal mx-1.5">/</span>
-                  Prime Life Plan
-                </Link>
-              </Button>
+              <Magnetic strength={0.35}>
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-brand-red text-white hover:bg-brand-red/90 font-semibold h-12 px-7 text-base shadow-brand group"
+                >
+                  <Link href="#memberships">
+                    Join Privilege Membership
+                    <ArrowRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+              </Magnetic>
+              <Magnetic strength={0.25}>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="h-12 px-6 text-base font-semibold border-2 border-black/15 hover:border-brand-red hover:text-brand-red bg-white"
+                >
+                  <Link href="#memberships">
+                    <span className="text-brand-red font-bold">₹9,999</span>
+                    <span className="text-muted-foreground font-normal mx-1.5">/</span>
+                    Prime Life Plan
+                  </Link>
+                </Button>
+              </Magnetic>
             </motion.div>
 
             <motion.div

@@ -15,11 +15,13 @@ import { Faq } from "@/components/site/faq";
 import { Contact } from "@/components/site/contact";
 import { Footer } from "@/components/site/footer";
 import { LogoIntro } from "@/components/site/logo-intro";
+import { ScrollProgress } from "@/components/site/scroll-progress";
 import { SITE } from "@/lib/site-data";
 
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <ScrollProgress />
       <LogoIntro />
       <Navbar />
       <main className="flex-1">

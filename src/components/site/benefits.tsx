@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import * as Icons from "lucide-react";
 import { BENEFITS } from "@/lib/site-data";
 import { SectionEyebrow } from "./journey";
+import { TiltCard } from "./tilt-card";
 
 const fade = {
   hidden: { opacity: 0, y: 24 },
@@ -54,29 +55,33 @@ export function Benefits() {
                   hidden: { opacity: 0, y: 24 },
                   show: { opacity: 1, y: 0 },
                 }}
-                whileHover={{ y: -6 }}
-                className="group relative rounded-2xl bg-white border border-black/5 p-6 hover:shadow-brand-sm hover:border-brand-red/30 transition-all overflow-hidden"
+                style={{ transformStyle: "preserve-3d" }}
               >
-                {/* index */}
-                <span className="absolute top-5 right-5 font-serif-display text-3xl font-black text-black/5 group-hover:text-brand-red/15 transition-colors">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
+                <TiltCard
+                  max={6}
+                  className="group relative rounded-2xl bg-white border border-black/5 p-6 hover:shadow-brand-sm hover:border-brand-red/30 transition-colors overflow-hidden h-full"
+                >
+                  {/* index */}
+                  <span className="absolute top-5 right-5 font-serif-display text-3xl font-black text-black/5 group-hover:text-brand-red/15 transition-colors">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
 
-                <div className="relative h-12 w-12 rounded-xl bg-brand-red/10 grid place-items-center group-hover:bg-brand-red transition-colors duration-300">
-                  <Icon className="h-6 w-6 text-brand-red group-hover:text-white transition-colors duration-300" />
-                </div>
+                  <div className="relative h-12 w-12 rounded-xl bg-brand-red/10 grid place-items-center group-hover:bg-brand-red transition-colors duration-300">
+                    <Icon className="h-6 w-6 text-brand-red group-hover:text-white transition-colors duration-300" />
+                  </div>
 
-                <h3 className="relative mt-5 font-serif-display text-xl font-bold">
-                  {b.title}
-                </h3>
-                <p className="relative mt-2 text-sm text-muted-foreground leading-relaxed">
-                  {b.desc}
-                </p>
+                  <h3 className="relative mt-5 font-serif-display text-xl font-bold">
+                    {b.title}
+                  </h3>
+                  <p className="relative mt-2 text-sm text-muted-foreground leading-relaxed">
+                    {b.desc}
+                  </p>
 
-                {/* bottom accent line */}
-                <div className="relative mt-5 h-0.5 w-full rounded-full bg-black/5 overflow-hidden">
-                  <div className="h-full w-0 group-hover:w-full bg-brand-red transition-all duration-500" />
-                </div>
+                  {/* bottom accent line */}
+                  <div className="relative mt-5 h-0.5 w-full rounded-full bg-black/5 overflow-hidden">
+                    <div className="h-full w-0 group-hover:w-full bg-brand-red transition-all duration-500" />
+                  </div>
+                </TiltCard>
               </motion.div>
             );
           })}

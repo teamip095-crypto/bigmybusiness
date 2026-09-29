@@ -6,6 +6,7 @@ import { Check, ArrowRight, Star, BadgePercent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MEMBERSHIP_PLANS } from "@/lib/site-data";
 import { SectionEyebrow } from "./journey";
+import { Magnetic } from "./magnetic";
 
 const fade = {
   hidden: { opacity: 0, y: 28 },
@@ -120,19 +121,21 @@ export function Membership() {
                 )}
               </div>
 
-              <Button
-                asChild
-                className={`mt-6 w-full h-12 font-semibold text-base ${
-                  plan.highlighted
-                    ? "bg-brand-red text-white hover:bg-brand-red/90 shadow-brand"
-                    : "bg-brand-black text-white hover:bg-brand-black/90"
-                }`}
-              >
-                <Link href="#contact">
-                  {plan.cta}
-                  <ArrowRight className="h-5 w-5 ml-1.5" />
-                </Link>
-              </Button>
+              <Magnetic strength={0.2}>
+                <Button
+                  asChild
+                  className={`mt-6 w-full h-12 font-semibold text-base ${
+                    plan.highlighted
+                      ? "bg-brand-red text-white hover:bg-brand-red/90 shadow-brand"
+                      : "bg-brand-black text-white hover:bg-brand-black/90"
+                  }`}
+                >
+                  <Link href="#contact">
+                    {plan.cta}
+                    <ArrowRight className="h-5 w-5 ml-1.5" />
+                  </Link>
+                </Button>
+              </Magnetic>
 
               <div
                 className={`mt-7 pt-6 border-t ${

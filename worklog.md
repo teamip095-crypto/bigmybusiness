@@ -335,3 +335,40 @@ Stage Summary:
 - "90+ Cities" and "200+ Chapters" purged from EVERY location (hero stats/badges/text, results grid, journey body/badges/story card, footer CTA, benefits, FAQ, intro, metadata)
 - New "Build Your City Chapter" interactive CTA placed in 3 spots (hero mini-stats, results grid, journey story card); clicking opens a form that, on submit, redirects to WhatsApp on BOTH office numbers (Bhilai + Raipur) with the chapter request pre-filled
 - Website remains fully functional, lint clean, no errors
+
+---
+Task ID: 7
+Agent: Main Orchestrator
+Task: (1) Replace the watermarked photo on the "How Networking Keeps Entrepreneurs Motivated and Growing" blog card with a clean one; (2) animate the entire website with world-class VFX + UI/UX.
+
+Work Log:
+- blog2.jpg (How Networking article): re-searched Pexels, downloaded "Three businesspeople in suits discussing" (4870×3247, clean) over the old one; VLM-confirmed watermark-free.
+- Created reusable animation primitives:
+  - src/lib/motion.ts: cinematic easing + variants (fadeUp, scaleIn, blurIn, stagger, wordReveal)
+  - src/components/site/scroll-progress.tsx: thin brand-red top progress bar driven by useScroll + useSpring (fills as you scroll, with a soft red glow)
+  - src/components/site/tilt-card.tsx: 3D cursor-following tilt wrapper (useMotionValue + useSpring + useTransform) with an optional glare radial highlight; hooks called unconditionally (lint-clean)
+  - src/components/site/magnetic.tsx: magnetic hover wrapper — wrapped element drifts toward the cursor (useSpring)
+  - src/components/site/spotlight.tsx: cursor-following radial spotlight overlay for dark sections (useMotionTemplate radial-gradient)
+- Applied across the site:
+  - page.tsx: mounted <ScrollProgress/> at top
+  - hero.tsx: wrapped both primary CTAs (Join Privilege / Prime Plan) in <Magnetic>
+  - benefits.tsx: each of the 9 benefit cards now wrapped in <TiltCard max=6> with glare (removed old whileHover y)
+  - blog.tsx: each article card wrapped in <TiltCard max=5> (restructured motion.article → motion.div > TiltCard > article to keep onClick)
+  - events.tsx: EventCard wrapped in <TiltCard max=4>; AwardsBand inner content wrapped in <Spotlight>; "Nominate for awards" CTA wrapped in <Magnetic>
+  - testimonials.tsx: inner content wrapped in <Spotlight> (cursor-following red glow on the dark section)
+  - membership.tsx: both plan CTA buttons wrapped in <Magnetic>
+
+Verification (Agent Browser):
+- blog2.jpg: replaced with clean Pexels photo, VLM-confirmed no watermark ✓
+- Scroll progress bar: present at top (fixed h-1 origin-left), visible filling on scroll ✓
+- Tilt cards: 16 elements with preserve-3d across benefits/blog/events ✓
+- Magnetic buttons: 5 wrappers (hero 2 + membership 2 + awards 1) ✓
+- Spotlight: VLM confirmed "soft red radial glow/spotlight" on testimonials dark section ✓
+- Hero: VLM confirmed "polished and premium, clean modern aesthetic" ✓
+- Benefits: VLM confirmed "highly polished, 3-column grid, consistent styling" ✓
+- No console errors before/after reload, lint clean, HTTP 200
+
+Stage Summary:
+- "How Networking" blog photo replaced with a clean, high-res Pexels image
+- World-class VFX layered across the whole site: top scroll-progress bar, 3D cursor-tilt cards (benefits/blog/events) with glare, magnetic CTAs (hero/membership/awards), and cursor-following spotlight glow on dark sections (testimonials/awards) — all built as reusable, lint-clean primitives on framer-motion springs
+- Site feels alive, premium and interactive; existing animations (8s intro, counters, marquee, carousel, accordion) preserved
