@@ -192,6 +192,7 @@ export const MEMBERSHIP_PLANS: Plan[] = [
       "Exclusive Mobile Application access",
       "Welcome Kit delivered to your doorstep",
       "Access to business growth video series",
+      "Social media business spotlight — your brand featured across our community handles",
       "WhatsApp group promotion (every 15 days)",
       "Business promotion inside the application",
       "Inter-city networking on Zoom (twice a month)",
@@ -212,6 +213,7 @@ export const MEMBERSHIP_PLANS: Plan[] = [
     features: [
       "Welcome post + Welcome Kit with name badge",
       "Includes Prime Membership & all its benefits",
+      "Premium social media spotlight — dedicated business showcase across our channels",
       "City-specific WhatsApp chapter community",
       "Open conversations on the chapter group",
       "Post your ask & give anytime on app/WhatsApp",

@@ -130,3 +130,49 @@ Stage Summary:
 - Email is now info@bigmybusiness.com everywhere
 - Second Raipur office fully added (address + phone + map) in navbar, footer, contact section, FAQ
 - Website remains fully functional, lint clean, no errors
+
+---
+Task ID: 3
+Agent: Main Orchestrator
+Task: Sharpen blurry testimonial photos, make journey story-card background photo clearly visible (with elegant text), add "social media business promotion" feature to both membership plans (attractive wording), and replace blurry event photos with sharp clear ones.
+
+Work Log:
+- Re-searched higher-resolution professional images via z-ai image-search (with rate-limit delays):
+  - Testimonial portraits: "professional studio corporate headshot of indian businessman" + "confident indian businessman professional portrait suit" (2 searches, 8 results each)
+  - Events: "business professionals networking meeting handshake sharp" + "business conference seminar speaker stage audience sharp" + webinar + awards searches
+  - Journey: "diverse business team putting hands together teamwork celebration sharp high resolution"
+- Downloaded 10 new sharper images (sequential curl to ensure persistence):
+  - t1.jpg (bearded Indian businessman navy blazer), t2.jpg (smiling man mustache arms crossed), t3.jpg (confident gray-haired businessman), t4.jpg (professional bearded headshot 2048x2048), t5.jpg (smiling young businessman dark suit)
+  - event1.jpg (two businessmen shaking hands, clean), event2.jpg (conference attendees raising hands 2048x1365), event3.jpg (woman earphones video call 1920x1280), event4.jpg (man tuxedo podium awards 2560x1707)
+  - journey.jpg (diverse business team stacking hands 1920x1080)
+- journey.tsx story card redesign:
+  - Image now object-cover object-center at full opacity (removed opacity-45 dimming)
+  - Replaced heavy full-card overlay with a bottom-only gradient (from-brand-black via-brand-black/90 to-transparent) so the photo stays clearly visible at the top
+  - Added subtle top vignette (from-brand-black/40) for elegance
+  - Text now has drop-shadows (drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]) for elegant readability over the photo
+  - "lifelong" highlighted in brand-red as accent
+  - Stat cards upgraded to bg-white/10 + border-white/20 + backdrop-blur-md (more glassy/elegant)
+  - Increased min-height to 460px for a more cinematic card
+- site-data.ts MEMBERSHIP_PLANS features:
+  - Prime: added "Social media business spotlight — your brand featured across our community handles" (positioned prominently)
+  - Privilege: added "Premium social media spotlight — dedicated business showcase across our channels"
+- testimonials.tsx avatar upgrade:
+  - Size h-14 w-14 → h-16 w-16 sm:h-20 sm:w-20 (bigger, sharper)
+  - ring-2 ring-brand-red/50 + ring-offset-2 ring-offset-brand-black/40 + shadow-lg (more elegant frame)
+  - object-cover object-top (faces not cropped out)
+  - sizes tuned to (max-width: 640px) 64px, 80px for sharper srcset
+  - name bumped to text-lg
+
+Verification (Agent Browser):
+- Journey card: VLM confirmed background photo "clearly visible, well-lit and sharp" + text "highly readable and elegant" ✓
+- Events: VLM confirmed photos "sharp and clear" (handshake + conference) with no blurry photos ✓
+- Testimonials: VLM confirmed circular avatar is a "real, sharp, professional portrait" of a bearded man in suit (Ujjaval Shah = new t4.jpg) ✓ (earlier "blurry" reads were the green Next.js devtools badge being mistaken for the avatar)
+- Membership features DOM: both "Social media business spotlight..." (Prime) and "Premium social media spotlight..." (Privilege) present ✓
+- No console errors before/after reload, lint clean, HTTP 200
+
+Stage Summary:
+- All 4 image areas replaced with sharper, higher-resolution photos
+- Journey story card now shows the team-photo background clearly with elegant drop-shadowed text + glassy stat cards
+- Social media business promotion feature added to BOTH membership plans with attractive, premium wording
+- Testimonial avatars enlarged and styled elegantly (ring + offset + shadow)
+- Website remains fully functional, lint clean, no errors

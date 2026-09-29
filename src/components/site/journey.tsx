@@ -79,29 +79,34 @@ export function Journey() {
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="relative"
           >
-            <div className="relative rounded-3xl overflow-hidden border border-black/5 shadow-xl bg-brand-black text-white p-8 sm:p-10 min-h-[420px] flex flex-col justify-end">
+            <div className="relative rounded-3xl overflow-hidden border border-black/5 shadow-xl bg-brand-black text-white min-h-[460px] flex flex-col justify-end">
               <Image
                 src="/images/journey.jpg"
-                alt="Big My Business members networking and stacking hands in teamwork"
+                alt="Big My Business members stacking hands together in teamwork"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover opacity-45"
+                className="object-cover object-center"
                 priority={false}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/80 to-brand-black/30" />
-              <div className="relative">
-                <span className="font-script text-brand-red text-2xl">our promise</span>
-                <h3 className="mt-2 font-serif-display text-2xl sm:text-3xl font-bold leading-tight">
-                  &ldquo;From a first handshake to a lifelong business relationship.&rdquo;
+              {/* gradient only on the lower half so the photo stays clearly visible up top */}
+              <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/90 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-b from-brand-black/40 via-transparent to-transparent" />
+              <div className="relative p-7 sm:p-9">
+                <span className="font-script text-brand-red text-2xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+                  our promise
+                </span>
+                <h3 className="mt-2 font-serif-display text-2xl sm:text-3xl font-bold leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]">
+                  &ldquo;From a first handshake to a{" "}
+                  <span className="text-brand-red">lifelong</span> business relationship.&rdquo;
                 </h3>
-                <p className="mt-4 text-sm text-white/70 leading-relaxed">
+                <p className="mt-4 text-sm text-white/85 leading-relaxed max-w-xl drop-shadow-[0_1px_6px_rgba(0,0,0,0.6)]">
                   We don&rsquo;t measure success by meetings held — we measure it by the
                   business our members do with each other. Every chapter meeting,
                   webinar and inter-city connect is designed to create one outcome:
                   <span className="text-white font-semibold"> real, referable revenue.</span>
                 </p>
 
-                <div className="mt-8 grid grid-cols-3 gap-3">
+                <div className="mt-7 grid grid-cols-3 gap-2.5 sm:gap-3 max-w-sm">
                   {[
                     { k: "90+", v: "Cities" },
                     { k: "200+", v: "Chapters" },
@@ -109,19 +114,19 @@ export function Journey() {
                   ].map((s) => (
                     <div
                       key={s.v}
-                      className="rounded-2xl bg-white/8 border border-white/15 backdrop-blur-sm p-3 text-center"
+                      className="rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md p-3 text-center"
                     >
                       <p className="font-serif-display text-xl sm:text-2xl font-extrabold text-brand-red">
                         {s.k}
                       </p>
-                      <p className="text-[11px] text-white/60 mt-0.5">{s.v}</p>
+                      <p className="text-[11px] text-white/75 mt-0.5">{s.v}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* corner accent */}
-              <div className="absolute -bottom-10 -right-10 w-40 h-40 rounded-full bg-brand-red/20 blur-2xl" />
+              <div className="absolute -bottom-10 -right-10 w-40 h-40 rounded-full bg-brand-red/25 blur-3xl" />
             </div>
           </motion.div>
         </div>

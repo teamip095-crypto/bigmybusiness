@@ -88,17 +88,17 @@ export function Testimonials() {
                 </p>
 
                 <div className="mt-7 flex items-center gap-4">
-                  <div className="relative h-14 w-14 rounded-full overflow-hidden ring-2 ring-brand-red/40 shrink-0">
+                  <div className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-full overflow-hidden ring-2 ring-brand-red/50 ring-offset-2 ring-offset-brand-black/40 shrink-0 shadow-lg">
                     <Image
                       src={t.photo}
                       alt={t.name}
                       fill
-                      sizes="56px"
-                      className="object-cover"
+                      sizes="(max-width: 640px) 64px, 80px"
+                      className="object-cover object-top"
                     />
                   </div>
                   <div>
-                    <p className="font-semibold">{t.name}</p>
+                    <p className="font-semibold text-lg">{t.name}</p>
                     <p className="text-sm text-white/60">
                       {t.role} · {t.city}
                     </p>
