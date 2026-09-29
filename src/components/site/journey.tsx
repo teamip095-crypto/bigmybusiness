@@ -110,7 +110,7 @@ export function Journey() {
                   {[
                     { k: "90+", v: "Cities" },
                     { k: "200+", v: "Chapters" },
-                    { k: "12+", v: "States" },
+                    { k: "3", v: "States" },
                   ].map((s) => (
                     <div
                       key={s.v}
@@ -123,6 +123,9 @@ export function Journey() {
                     </div>
                   ))}
                 </div>
+                <p className="mt-3 text-[11px] font-medium text-white/60">
+                  Chhattisgarh &middot; Odisha &middot; M.P.
+                </p>
               </div>
 
               {/* corner accent */}

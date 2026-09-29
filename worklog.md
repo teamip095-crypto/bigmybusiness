@@ -176,3 +176,62 @@ Stage Summary:
 - Social media business promotion feature added to BOTH membership plans with attractive, premium wording
 - Testimonial avatars enlarged and styled elegantly (ring + offset + shadow)
 - Website remains fully functional, lint clean, no errors
+
+---
+Task ID: 4
+Agent: Main Orchestrator
+Task: 6 changes — (1) Awards button "Nominate for Awards 2025" → "Nominate for awards"; (2) contact form after submit should go to WhatsApp on BOTH numbers (9424242043 + 9301056006); (3) remove specific dates from Events section; (4) on first load, logo should animate in beautifully THEN reveal the homepage; (5) remove ALL watermarked photos from entire website (blog1 Cash Flow confirmed watermarked); (6) change "12+ States" → "3 states: Chhattisgarh, Odisha, M.P.".
+
+Work Log:
+- VLM watermark audit (parallel) + targeted re-searches; replaced all watermarked photos with clean Pexels/Unsplash versions:
+  - t1.jpg (Adarsh) ← Pexels bearded businessman dark suit
+  - t2.jpg (Dhruv) ← Pexels confident businessman black suit
+  - t3.jpg (Ketan) ← Pexels smiling middle-aged man
+  - t5.jpg (Ujjaval) ← Unsplash bearded man
+  - t4.jpg kept (AI-generated, verified clean)
+  - blog1.jpg (Cash Flow) ← Pexels hand on Casio calculator (6480×4320)
+  - blog2.jpg (Networking) ← Pexels four business professionals
+  - blog3.jpg (Innovation) ← Unsplash glowing red light bulb (matches brand!)
+  - journey.jpg ← Pexels diverse colleagues stacking hands (6178×4119)
+  - event1-4.jpg verified clean via VLM (kept)
+  - All 13 photos now confirmed watermark-free
+- events.tsx:
+  - AwardsBand button text: "Nominate for Awards 2025" → "Nominate for awards"
+  - EventCard: removed the date badge (day/month) from the image; replaced with a "In Person/Online" type badge on the image
+  - Removed duplicate type badge from the card body (kept only "Upcoming" status)
+- journey.tsx story card: "12+" → "3" for States + added caption "Chhattisgarh · Odisha · M.P." below the stat row
+- site-data.ts RESULTS_GRID: "States" 12+ → "States (CG, OD, MP)" value 3, suffix ""
+- contact.tsx:
+  - Added `submitted` state to capture form data before clearing
+  - Added buildWaLink(phone) helper that constructs https://wa.me/91<phone>?text=<encoded enquiry> with name/phone/email/city/interest/message
+  - On successful submit: stores form data, shows success state with TWO green WhatsApp buttons (Bhilai Head Office + Raipur), each linking to wa.me with pre-filled message; both numbers reachable
+  - Kept the API/DB storage too (enquiry still saved)
+- logo-intro.tsx (NEW): elegant first-load splash
+  - Full-screen bg-brand-black overlay (z-100)
+  - Logo scales/fades in (spring), red underline draws beneath, "Connect. Collaborate. Grow Big." tagline fades in (Pacifico script), animated loader dots
+  - Decorative red glow + grid background
+  - After 2.6s, overlay slides up + fades, revealing the homepage
+  - Guarded by sessionStorage ("bmb_intro_seen") so it plays once per session, not on every reload
+  - Locks body scroll during play; SSR renders nothing (show starts false) so no hydration mismatch; eslint-clean
+- page.tsx: added <LogoIntro /> at top
+
+Verification (Agent Browser):
+- Intro: 0.8s = dark splash with logo ✓; 2s = splash with logo + tagline "Connect. Collaborate. Grow Big." ✓; 3.5s = full homepage revealed ✓
+- Awards button DOM: "Nominate for awards" ✓
+- Events: no "Oct"/"Nov"/"2025" dates, "Upcoming" still present ✓
+- Journey stats DOM: "90+ Cities, 200+ Chapters, 3 States, Chhattisgarh · Odisha · M.P." ✓
+- Results grid: States shows "3" (not "12+") ✓
+- Contact form golden path: filled → submit → "Thank you!" + two WhatsApp buttons:
+  - "Chat on WhatsApp Bhilai (Head Office) · +91 94242 42043" → https://wa.me/919424242043?text=Hi%20Big%20My%20Business!... ✓
+  - "Chat on WhatsApp Raipur · +91 93010 56006" → https://wa.me/919301056006?text=Hi%20Big%20My%20Business!... ✓
+  - Both links contain the pre-filled enquiry message
+- VLM confirmed blog1 (Cash Flow) and journey photos are watermark-free ✓
+- No console errors, lint clean, HTTP 200
+
+Stage Summary:
+- All 6 requests implemented and verified
+- Logo intro animation plays once per session, elegantly reveals the homepage
+- Contact form now redirects to WhatsApp on BOTH office numbers with pre-filled enquiry
+- All watermarked stock photos replaced with clean Pexels/Unsplash versions (13/13 verified clean)
+- Events show no specific dates; Awards button says "Nominate for awards"; States stat shows 3 (CG, OD, MP)
+- Website remains fully functional, lint clean, no errors

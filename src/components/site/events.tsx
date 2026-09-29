@@ -86,13 +86,10 @@ function EventCard({ ev }: { ev: EventItem }) {
           className="object-cover transition-transform duration-700 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/95 group-hover:to-white/85 transition-colors" />
-        {/* date badge */}
-        <div className="absolute top-3 left-3 rounded-xl bg-brand-black/90 backdrop-blur text-white px-2.5 py-2 text-center shadow-lg">
-          <p className="font-serif-display text-xl font-black leading-none text-brand-red">
-            {ev.dateShort.day}
-          </p>
-          <p className="text-[10px] font-semibold uppercase tracking-wider mt-0.5">
-            {ev.dateShort.month}
+        {/* type badge on image */}
+        <div className="absolute top-3 left-3 rounded-xl bg-brand-black/90 backdrop-blur text-white px-2.5 py-1.5 text-center shadow-lg">
+          <p className="text-[10px] font-semibold uppercase tracking-wider">
+            {online ? "Online" : "In Person"}
           </p>
         </div>
       </div>
@@ -108,14 +105,6 @@ function EventCard({ ev }: { ev: EventItem }) {
             }`}
           >
             {ev.status}
-          </span>
-          <span
-            className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-              online ? "bg-black/8 text-foreground/70" : "bg-brand-black/8 text-foreground/70"
-            }`}
-          >
-            {online ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
-            {ev.type}
           </span>
         </div>
         <h3 className="font-serif-display text-base sm:text-lg lg:text-xl font-bold leading-snug group-hover:text-brand-red transition-colors">
@@ -213,7 +202,7 @@ export function AwardsBand() {
             className="bg-brand-red text-white hover:bg-brand-red/90 font-semibold h-12 px-7 shadow-brand"
           >
             <Link href="#contact">
-              Nominate for Awards 2025
+              Nominate for awards
               <ArrowRight className="h-5 w-5 ml-2" />
             </Link>
           </Button>

@@ -95,7 +95,7 @@ export const HERO_STATS = [
 
 // "What Result We Get" grid
 export const RESULTS_GRID = [
-  { label: "States", value: 12, suffix: "+" },
+  { label: "States (CG, OD, MP)", value: 3, suffix: "" },
   { label: "Cities", value: 90, suffix: "+" },
   { label: "Chapters", value: 200, suffix: "+" },
   { label: "Members", value: 6500, suffix: "+" },

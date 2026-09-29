@@ -11,6 +11,7 @@ import {
   Loader2,
   CheckCircle2,
   MessageSquare,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,14 @@ const fade = {
 export function Contact() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [submitted, setSubmitted] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    city: "",
+    interest: "",
+    message: "",
+  });
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -46,6 +55,22 @@ export function Contact() {
 
   const update = (k: keyof typeof form, v: string) =>
     setForm((p) => ({ ...p, [k]: v }));
+
+  const buildWaLink = (phone: string) => {
+    const lines = [
+      "Hi Big My Business! I'd like to enquire.",
+      "",
+      `Name: ${submitted.name}`,
+      `Phone: ${submitted.phone}`,
+      `Email: ${submitted.email}`,
+      submitted.city ? `City: ${submitted.city}` : "",
+      submitted.interest ? `Interested in: ${submitted.interest}` : "",
+      "",
+      `Message: ${submitted.message}`,
+    ].filter(Boolean);
+    const text = encodeURIComponent(lines.join("\n"));
+    return `https://wa.me/91${phone}?text=${text}`;
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,8 +85,9 @@ export function Contact() {
       if (!res.ok || !data.ok) {
         throw new Error(data.error || "Submission failed");
       }
+      setSubmitted(form);
       toast.success("Enquiry submitted!", {
-        description: data.message,
+        description: "Opening WhatsApp — pick a number to chat with our team.",
       });
       setDone(true);
       setForm({ name: "", email: "", phone: "", city: "", interest: "", message: "" });
@@ -108,7 +134,7 @@ export function Contact() {
             className="rounded-3xl border border-black/8 bg-white p-6 sm:p-8 shadow-xl"
           >
             {done ? (
-              <div className="flex flex-col items-center justify-center text-center py-12">
+              <div className="flex flex-col items-center justify-center text-center py-8 sm:py-12">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -119,12 +145,36 @@ export function Contact() {
                 </motion.div>
                 <h3 className="font-serif-display text-2xl font-bold">Thank you!</h3>
                 <p className="mt-2 text-muted-foreground max-w-sm">
-                  Your enquiry has reached our team at Karma Bhawan, Bhilai. We&rsquo;ll
-                  reach out to you shortly.
+                  Your enquiry has reached our team. Continue the conversation on WhatsApp —
+                  pick either office and your details will be pre-filled.
                 </p>
+
+                <div className="mt-6 w-full max-w-sm grid gap-3">
+                  {SITE.offices.map((o) => (
+                    <a
+                      key={o.cityShort}
+                      href={buildWaLink(o.phone)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-3 rounded-2xl bg-[#25D366] text-white px-4 py-3.5 font-semibold shadow-lg hover:bg-[#1fb855] transition-colors"
+                    >
+                      <MessageCircle className="h-6 w-6 fill-white text-[#25D366] shrink-0" />
+                      <span className="flex-1 text-left">
+                        <span className="block text-sm leading-tight">
+                          Chat on WhatsApp
+                        </span>
+                        <span className="block text-xs font-normal text-white/85">
+                          {o.city} &middot; {o.phoneDisplay}
+                        </span>
+                      </span>
+                      <Send className="h-4 w-4 opacity-80 group-hover:translate-x-0.5 transition-transform" />
+                    </a>
+                  ))}
+                </div>
+
                 <Button
                   variant="outline"
-                  className="mt-6 border-2 border-black/15 hover:border-brand-red hover:text-brand-red bg-white"
+                  className="mt-5 border-2 border-black/15 hover:border-brand-red hover:text-brand-red bg-white"
                   onClick={() => setDone(false)}
                 >
                   Send another enquiry
