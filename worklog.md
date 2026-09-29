@@ -372,3 +372,27 @@ Stage Summary:
 - "How Networking" blog photo replaced with a clean, high-res Pexels image
 - World-class VFX layered across the whole site: top scroll-progress bar, 3D cursor-tilt cards (benefits/blog/events) with glare, magnetic CTAs (hero/membership/awards), and cursor-following spotlight glow on dark sections (testimonials/awards) — all built as reusable, lint-clean primitives on framer-motion springs
 - Site feels alive, premium and interactive; existing animations (8s intro, counters, marquee, carousel, accordion) preserved
+
+---
+Task ID: 8
+Agent: Main Orchestrator
+Task: Testimonial photos are bad — replace with good closeup portraits.
+
+Work Log:
+- Re-searched via z-ai image-search with targeted query "smiling indian businessman headshot portrait suit close up face pexels" (Pexels-sourced to guarantee clean, no watermark)
+- Selected 5 distinct closeup Pexels portraits (all high-res, face fills frame):
+  - t1.jpg ← Pexels "smiling middle-aged South Asian man white shirt" (5184×3456)
+  - t2.jpg ← Pexels "close-up bearded man black suit" (6000×4000)
+  - t3.jpg ← Pexels "smiling bearded man glasses dark suit" (6000×4000)
+  - t4.jpg ← Pexels "smiling bearded man curly dark hair" (4000×5391)
+  - t5.jpg ← Pexels "close-up smiling young South Asian man" (1536×2752)
+- Downloaded all 5 sequentially (sizes 461KB–2.1MB)
+- VLM-verified EACH of the 5 individually: all confirmed "sharp, professional closeup portrait headshot, no watermark"
+
+Verification (Agent Browser):
+- Testimonial avatar DOM: complete:true, loads via _next/image optimization ✓
+- All 5 source photos VLM-confirmed sharp + closeup + watermark-free ✓
+- Lint clean, HTTP 200
+
+Stage Summary:
+- All 5 testimonial member photos replaced with sharp, closeup, professional Pexels portraits (face fills the circular avatar) — no more bad/distant photos
