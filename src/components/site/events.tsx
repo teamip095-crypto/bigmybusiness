@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { CalendarDays, Clock, MapPin, ArrowRight, Video, Users2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EVENTS, type EventItem } from "@/lib/site-data";
@@ -72,74 +73,84 @@ function EventCard({ ev }: { ev: EventItem }) {
         hidden: { opacity: 0, y: 24 },
         show: { opacity: 1, y: 0 },
       }}
-      whileHover={{ y: -4 }}
-      className="group relative rounded-2xl bg-white border border-black/5 hover:border-brand-red/30 hover:shadow-brand-sm transition-all overflow-hidden"
+      whileHover={{ y: -6 }}
+      className="group relative rounded-2xl bg-white border border-black/5 hover:border-brand-red/30 hover:shadow-brand transition-all overflow-hidden flex"
     >
-      <div className="flex flex-col sm:flex-row">
-        {/* date block */}
-        <div className="shrink-0 sm:w-28 bg-brand-black text-white p-5 flex sm:flex-col items-center justify-center gap-2 sm:gap-0">
-          <span className="font-serif-display text-3xl sm:text-4xl font-black leading-none text-brand-red">
+      {/* image */}
+      <div className="relative shrink-0 w-32 sm:w-44 lg:w-52 overflow-hidden">
+        <Image
+          src={ev.image}
+          alt={ev.title}
+          fill
+          sizes="(max-width: 640px) 128px, (max-width: 1024px) 176px, 208px"
+          className="object-cover transition-transform duration-700 group-hover:scale-110"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/95 group-hover:to-white/85 transition-colors" />
+        {/* date badge */}
+        <div className="absolute top-3 left-3 rounded-xl bg-brand-black/90 backdrop-blur text-white px-2.5 py-2 text-center shadow-lg">
+          <p className="font-serif-display text-xl font-black leading-none text-brand-red">
             {ev.dateShort.day}
-          </span>
-          <span className="text-sm font-semibold uppercase tracking-wider">
+          </p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider mt-0.5">
             {ev.dateShort.month}
-          </span>
+          </p>
+        </div>
+      </div>
+
+      {/* body */}
+      <div className="flex-1 p-4 sm:p-5 lg:p-6 flex flex-col">
+        <div className="flex flex-wrap items-center gap-1.5 mb-2">
           <span
-            className={`hidden sm:block mt-2 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${
-              online ? "bg-white/10 text-white/80" : "bg-brand-red/20 text-brand-red"
+            className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+              ev.status === "Upcoming"
+                ? "bg-brand-red/10 text-brand-red"
+                : "bg-black/10 text-foreground/60"
             }`}
           >
+            {ev.status}
+          </span>
+          <span
+            className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+              online ? "bg-black/8 text-foreground/70" : "bg-brand-black/8 text-foreground/70"
+            }`}
+          >
+            {online ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
             {ev.type}
           </span>
         </div>
+        <h3 className="font-serif-display text-base sm:text-lg lg:text-xl font-bold leading-snug group-hover:text-brand-red transition-colors">
+          {ev.title}
+        </h3>
+        <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed line-clamp-2">
+          {ev.desc}
+        </p>
 
-        {/* body */}
-        <div className="flex-1 p-5 sm:p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <span
-              className={`inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                ev.status === "Upcoming"
-                  ? "bg-brand-red/10 text-brand-red"
-                  : "bg-black/10 text-foreground/60"
-              }`}
-            >
-              {ev.status}
-            </span>
-          </div>
-          <h3 className="font-serif-display text-lg sm:text-xl font-bold leading-snug group-hover:text-brand-red transition-colors">
-            {ev.title}
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-            {ev.desc}
-          </p>
-
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-foreground/70">
-            <span className="inline-flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-brand-red" />
-              {ev.time}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              {online ? (
-                <Video className="h-3.5 w-3.5 text-brand-red" />
-              ) : (
-                <MapPin className="h-3.5 w-3.5 text-brand-red" />
-              )}
-              {ev.location}
-            </span>
-          </div>
-
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="mt-4 -ml-2 text-brand-red hover:bg-brand-red/10 font-semibold"
-          >
-            <Link href="#contact">
-              Reserve seat
-              <ArrowRight className="h-3.5 w-3.5 ml-1" />
-            </Link>
-          </Button>
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-foreground/70">
+          <span className="inline-flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5 text-brand-red" />
+            {ev.time}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            {online ? (
+              <Video className="h-3.5 w-3.5 text-brand-red" />
+            ) : (
+              <MapPin className="h-3.5 w-3.5 text-brand-red" />
+            )}
+            {ev.location}
+          </span>
         </div>
+
+        <Button
+          asChild
+          variant="ghost"
+          size="sm"
+          className="mt-3 -ml-2 w-max text-brand-red hover:bg-brand-red/10 font-semibold"
+        >
+          <Link href="#contact">
+            Reserve seat
+            <ArrowRight className="h-3.5 w-3.5 ml-1" />
+          </Link>
+        </Button>
       </div>
     </motion.article>
   );

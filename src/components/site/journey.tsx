@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { MapPin, CalendarDays, Users, TrendingUp } from "lucide-react";
 import { AnimatedCounter } from "./animated-counter";
 import { RESULTS_GRID, SITE } from "@/lib/site-data";
@@ -78,8 +79,16 @@ export function Journey() {
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="relative"
           >
-            <div className="relative rounded-3xl overflow-hidden border border-black/5 shadow-xl bg-gradient-to-br from-brand-black to-[#1f1f1f] text-white p-8 sm:p-10">
-              <div className="absolute inset-0 bg-grid-dark opacity-40" />
+            <div className="relative rounded-3xl overflow-hidden border border-black/5 shadow-xl bg-brand-black text-white p-8 sm:p-10 min-h-[420px] flex flex-col justify-end">
+              <Image
+                src="/images/journey.jpg"
+                alt="Big My Business members networking and stacking hands in teamwork"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover opacity-45"
+                priority={false}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/80 to-brand-black/30" />
               <div className="relative">
                 <span className="font-script text-brand-red text-2xl">our promise</span>
                 <h3 className="mt-2 font-serif-display text-2xl sm:text-3xl font-bold leading-tight">
@@ -100,7 +109,7 @@ export function Journey() {
                   ].map((s) => (
                     <div
                       key={s.v}
-                      className="rounded-2xl bg-white/5 border border-white/10 p-3 text-center"
+                      className="rounded-2xl bg-white/8 border border-white/15 backdrop-blur-sm p-3 text-center"
                     >
                       <p className="font-serif-display text-xl sm:text-2xl font-extrabold text-brand-red">
                         {s.k}

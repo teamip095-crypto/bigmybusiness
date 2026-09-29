@@ -199,6 +199,7 @@ export type EventItem = {
   type: "Physical" | "Online";
   status: "Upcoming" | "Completed";
   desc: string;
+  image: string;
 };
 
 export const EVENTS: EventItem[] = [
@@ -211,6 +212,7 @@ export const EVENTS: EventItem[] = [
     type: "Physical",
     status: "Upcoming",
     desc: "Bi-weekly chapter meeting with member introductions, referral exchange and a featured speaker.",
+    image: "/images/event1.jpg",
   },
   {
     title: "Inter-City Networking Summit",
@@ -221,6 +223,7 @@ export const EVENTS: EventItem[] = [
     type: "Physical",
     status: "Upcoming",
     desc: "Members from Raipur, Bhilai, Durg and Bilaspur connect for cross-city collaboration.",
+    image: "/images/event2.jpg",
   },
   {
     title: "Business Growth Webinar",
@@ -231,6 +234,7 @@ export const EVENTS: EventItem[] = [
     type: "Online",
     status: "Upcoming",
     desc: "Expert-led session on scaling SMEs with structured referrals and digital presence.",
+    image: "/images/event3.jpg",
   },
   {
     title: "Annual Awards & Recognition Night",
@@ -241,6 +245,7 @@ export const EVENTS: EventItem[] = [
     type: "Physical",
     status: "Upcoming",
     desc: "Celebrating the year's most collaborative members, leaders and high-growth businesses.",
+    image: "/images/event4.jpg",
   },
 ];
 
@@ -264,6 +269,7 @@ export type BlogPost = {
   readTime: string;
   excerpt: string;
   content: string[];
+  image: string;
 };
 
 export const BLOG_POSTS: BlogPost[] = [
@@ -282,6 +288,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "Balance today's bills with tomorrow's vision — both need funding.",
       "Make creativity financially sustainable — ask how each idea grows the business.",
     ],
+    image: "/images/blog1.jpg",
   },
   {
     title: "How Networking Keeps Entrepreneurs Motivated and Growing",
@@ -297,6 +304,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "Stay motivated being around ambitious, growth-focused people.",
       "Learn and grow together — networking is a two-way exchange of knowledge.",
     ],
+    image: "/images/blog2.jpg",
   },
   {
     title: "Every Challenge Creates a New Business Opportunity",
@@ -312,6 +320,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "Failure builds experience — practical lessons that shape stronger strategy.",
       "A solution-focused mindset is the real currency of success.",
     ],
+    image: "/images/blog3.jpg",
   },
 ];
 
@@ -322,6 +331,7 @@ export type Testimonial = {
   city: string;
   quote: string;
   initials: string;
+  photo: string;
 };
 
 export const TESTIMONIALS: Testimonial[] = [
@@ -332,6 +342,7 @@ export const TESTIMONIALS: Testimonial[] = [
     quote:
       "Big My Business is more than a networking platform — it's a circle of trust, growth and opportunity. The relationships I've built here have added immense value to my professional journey.",
     initials: "AS",
+    photo: "/images/t1.jpg",
   },
   {
     name: "Dhruv Dave",
@@ -340,6 +351,7 @@ export const TESTIMONIALS: Testimonial[] = [
     quote:
       "Every entrepreneur needs a platform that helps them grow beyond their business. Big My Business connected me with visionary owners and created opportunities far beyond traditional networking.",
     initials: "DD",
+    photo: "/images/t2.jpg",
   },
   {
     name: "Ketan Kathiriya",
@@ -348,6 +360,7 @@ export const TESTIMONIALS: Testimonial[] = [
     quote:
       "I've gained more than business connections — I've gained a trusted circle that genuinely cares about each other's success. Every meeting is worth the time.",
     initials: "KK",
+    photo: "/images/t3.jpg",
   },
   {
     name: "Umesh Khivasara",
@@ -356,6 +369,7 @@ export const TESTIMONIALS: Testimonial[] = [
     quote:
       "The support, trust and collaboration among members make this a unique and rewarding community. The networking opportunities have added tremendous value to my business journey.",
     initials: "UK",
+    photo: "/images/t4.jpg",
   },
   {
     name: "Ujjaval Shah",
@@ -364,6 +378,7 @@ export const TESTIMONIALS: Testimonial[] = [
     quote:
       "Thank you for creating such a valuable and well-organised community. The opportunities for collaboration and growth have been truly exceptional.",
     initials: "US",
+    photo: "/images/t5.jpg",
   },
 ];
 

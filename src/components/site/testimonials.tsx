@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Quote, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -87,8 +88,14 @@ export function Testimonials() {
                 </p>
 
                 <div className="mt-7 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-brand-red to-brand-red/70 grid place-items-center text-white font-bold">
-                    {t.initials}
+                  <div className="relative h-14 w-14 rounded-full overflow-hidden ring-2 ring-brand-red/40 shrink-0">
+                    <Image
+                      src={t.photo}
+                      alt={t.name}
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                    />
                   </div>
                   <div>
                     <p className="font-semibold">{t.name}</p>
