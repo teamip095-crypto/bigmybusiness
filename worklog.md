@@ -396,3 +396,33 @@ Verification (Agent Browser):
 
 Stage Summary:
 - All 5 testimonial member photos replaced with sharp, closeup, professional Pexels portraits (face fills the circular avatar) — no more bad/distant photos
+
+---
+Task ID: 9
+Agent: Main Orchestrator
+Task: (1) Make the 8s intro 15 seconds with light impressive music; (2) "How Networking Keeps Entrepreneurs Motivated" blog photo still not changed — use the one from the Google Drive link.
+
+Work Log:
+- blog2.jpg: downloaded from the user's Google Drive link (file id 1pErIKfgDTbnGwHG0hG0kfSZRyykz6gB7) → 5227×1960 JPEG of a professional business meeting (colleagues discussing around a table with laptop + financial charts overlay); VLM-confirmed relevant to networking + no watermark.
+- logo-intro.tsx FULL UPDATE:
+  - DURATION 8000 → 15000 (15s)
+  - Added in-browser music synthesis via Web Audio API (no external audio file):
+    - startMusic() builds an AudioContext with master gain (fade-in 1.5s, fade-out last 2.5s), warm low-pass filter, and a gentle feedback delay for space
+    - Plays an uplifting I–V–vi–IV chord progression in C (C → G → Am → F, ~3.75s each) as soft triangle-wave pads
+    - Overlays a gentle sine "sparkle" arpeggio melody on top (12 notes across the 15s)
+  - Autoplay handling (browsers block unmuted autoplay): creates the AudioContext on intro mount, tries ctx.resume(); if it stays suspended, adds one-time pointerdown/keydown/touchstart listeners to resume on first user gesture; shows a subtle "🔊 Tap for sound" pill button at the bottom that the user can click to start the music (and hides once running)
+  - Clean-up: ctx.close() on intro exit / unmount
+  - Re-timed the animation sequence to fit 15s: logo (0.2s) → underline (0.95s) → "What is Big My Business?" (1.6s) → subtitle (2.2s) → 4 benefit cards staggered (3.2s, 1s apart) → tagline (11s) → "Entering the experience" (12s) → reveal at 15s
+  - Progress bar now animates over 15s linear
+
+Verification (Agent Browser):
+- Intro plays 15s then reveals homepage (captured at ~16s = full homepage "Grow Your Business Big") ✓
+- "Tap for sound" button visible during intro ✓
+- Clicking "Tap for sound" hides the hint (setMuted(false) after ctx.resume) ✓
+- blog2 DOM: complete:true, loads; VLM confirmed 2nd article shows "business meeting/networking scene, three colleagues around a table with laptop" ✓
+- No console errors during intro (audio code), lint clean, HTTP 200
+
+Stage Summary:
+- Intro extended to 15 seconds with a light, impressive ambient melody (synthesised in-browser — I-V-vi-IV pads + sparkle arpeggio, fade in/out) that unlocks on first user gesture via a "Tap for sound" button (browser autoplay policy)
+- blog2 photo replaced with the user's Google Drive networking-meeting image (clean, no watermark)
+- Website remains fully functional, lint clean, no errors

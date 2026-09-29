@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -8,40 +8,119 @@ import {
   Share2,
   Handshake,
   TrendingUp,
+  Volume2,
 } from "lucide-react";
 
 /**
- * First-load intro (8s) on a LIGHT background so the black logo is visible.
+ * First-load intro (15s) on a LIGHT background so the black logo is visible.
  * Plays an animated story: logo → "what is Big My Business?" → 4 benefit
- * pillars → tagline → reveal homepage. Runs once per browser session.
+ * pillars → tagline → reveal homepage. Accompanied by a soft, uplifting
+ * ambient melody synthesised in-browser via the Web Audio API (no audio
+ * file needed). Runs once per browser session.
  */
-const DURATION = 8000;
+const DURATION = 15000;
 
 const BENEFITS = [
-  {
-    icon: Users,
-    title: "Connect",
-    desc: "Build your city chapter",
-  },
-  {
-    icon: Share2,
-    title: "Refer",
-    desc: "Qualified business referrals",
-  },
-  {
-    icon: Handshake,
-    title: "Collaborate",
-    desc: "Partnerships & growth",
-  },
-  {
-    icon: TrendingUp,
-    title: "Grow Big",
-    desc: "Real, referable revenue",
-  },
+  { icon: Users, title: "Connect", desc: "Build your city chapter" },
+  { icon: Share2, title: "Refer", desc: "Qualified business referrals" },
+  { icon: Handshake, title: "Collaborate", desc: "Partnerships & growth" },
+  { icon: TrendingUp, title: "Grow Big", desc: "Real, referable revenue" },
 ];
+
+// Build a soft, uplifting 15-second ambient piece (I–V–vi–IV in C) with a
+// gentle pad + sparkle arpeggio. Returns the AudioContext so it can be closed.
+function startMusic(): AudioContext | null {
+  const AC =
+    typeof window !== "undefined"
+      ? window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext
+      : undefined;
+  if (!AC) return null;
+  const ctx = new AC();
+
+  const master = ctx.createGain();
+  master.gain.value = 0.0001;
+  master.connect(ctx.destination);
+
+  // warm low-pass
+  const filter = ctx.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.value = 2400;
+  filter.Q.value = 0.4;
+  filter.connect(master);
+
+  // gentle feedback delay for space
+  const delay = ctx.createDelay();
+  delay.delayTime.value = 0.32;
+  const fb = ctx.createGain();
+  fb.gain.value = 0.28;
+  delay.connect(fb);
+  fb.connect(delay);
+  delay.connect(filter);
+
+  type Note = { f: number; s: number; d: number; p: number; t: OscillatorType };
+  const playNote = (n: Note) => {
+    const osc = ctx.createOscillator();
+    osc.type = n.t;
+    osc.frequency.value = n.f;
+    const g = ctx.createGain();
+    const start = ctx.currentTime + 0.1 + n.s;
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(n.p, start + 0.12);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + n.d);
+    osc.connect(g);
+    g.connect(filter);
+    g.connect(delay);
+    osc.start(start);
+    osc.stop(start + n.d + 0.05);
+  };
+
+  const t0 = ctx.currentTime + 0.1;
+  // master fade in (1.5s) and fade out (last 2s)
+  master.gain.setValueAtTime(0.0001, t0);
+  master.gain.exponentialRampToValueAtTime(0.55, t0 + 1.5);
+  master.gain.setValueAtTime(0.55, t0 + 12.5);
+  master.gain.exponentialRampToValueAtTime(0.0001, t0 + 15);
+
+  // I–V–vi–IV chord progression, each ~3.75s (pads)
+  const chords: number[][] = [
+    [130.81, 196.0, 261.63, 329.63], // C  (C3 G3 C4 E4)
+    [196.0, 293.66, 392.0, 493.88], // G  (G3 D4 G4 B4)
+    [220.0, 261.63, 329.63, 440.0], // Am (A3 C4 E4 A4)
+    [174.61, 261.63, 349.23, 440.0], // F  (F3 C4 F4 A4)
+  ];
+  chords.forEach((notes, i) => {
+    const start = i * 3.75;
+    notes.forEach((f) =>
+      playNote({ f, s: start, d: 3.9, p: 0.1, t: "triangle" })
+    );
+  });
+
+  // sparkle arpeggio melody on top (sine, soft)
+  const melody: Note[] = [
+    { f: 523.25, s: 0.2, d: 0.9, p: 0.07, t: "sine" },
+    { f: 659.25, s: 1.1, d: 0.9, p: 0.07, t: "sine" },
+    { f: 783.99, s: 2.0, d: 1.1, p: 0.07, t: "sine" },
+    { f: 587.33, s: 3.95, d: 0.9, p: 0.07, t: "sine" },
+    { f: 783.99, s: 4.85, d: 0.9, p: 0.07, t: "sine" },
+    { f: 987.77, s: 5.75, d: 1.2, p: 0.07, t: "sine" },
+    { f: 523.25, s: 7.7, d: 0.9, p: 0.07, t: "sine" },
+    { f: 659.25, s: 8.6, d: 0.9, p: 0.07, t: "sine" },
+    { f: 880.0, s: 9.5, d: 1.3, p: 0.07, t: "sine" },
+    { f: 698.46, s: 11.45, d: 1.0, p: 0.07, t: "sine" },
+    { f: 880.0, s: 12.35, d: 1.0, p: 0.07, t: "sine" },
+    { f: 1046.5, s: 13.25, d: 1.6, p: 0.08, t: "sine" },
+  ];
+  melody.forEach(playNote);
+
+  return ctx;
+}
 
 export function LogoIntro() {
   const [show, setShow] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const ctxRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     if (
@@ -58,6 +137,31 @@ export function LogoIntro() {
     if (!show) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
+    // start music (will be suspended until first user gesture, per browser policy)
+    ctxRef.current = startMusic();
+    const ctx = ctxRef.current;
+    if (ctx) {
+      const tryResume = () => {
+        ctx.resume().then(() => {
+          if (ctx.state === "running") {
+            setMuted(false);
+          }
+        }).catch(() => {});
+      };
+      tryResume();
+      // listen for the first user gesture to unlock audio
+      const unlock = () => {
+        tryResume();
+        window.removeEventListener("pointerdown", unlock);
+        window.removeEventListener("keydown", unlock);
+        window.removeEventListener("touchstart", unlock);
+      };
+      window.addEventListener("pointerdown", unlock, { once: true });
+      window.addEventListener("keydown", unlock, { once: true });
+      window.addEventListener("touchstart", unlock, { once: true });
+    }
+
     const t = window.setTimeout(() => {
       window.sessionStorage.setItem("bmb_intro_seen", "1");
       document.body.style.overflow = prev || "";
@@ -66,6 +170,15 @@ export function LogoIntro() {
     return () => {
       window.clearTimeout(t);
       document.body.style.overflow = prev || "";
+      const c = ctxRef.current;
+      if (c) {
+        try {
+          c.close();
+        } catch {
+          // ignore
+        }
+        ctxRef.current = null;
+      }
     };
   }, [show]);
 
@@ -79,7 +192,7 @@ export function LogoIntro() {
           exit={{ y: "-100%", opacity: 0 }}
           transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
         >
-          {/* decorative soft red glows + faint grid on white */}
+          {/* decorative soft red glow + faint grid */}
           <motion.div
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -94,7 +207,7 @@ export function LogoIntro() {
             <motion.div
               initial={{ scale: 0.7, opacity: 0, y: 14 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="relative h-14 w-[200px] sm:h-16 sm:w-[230px] md:h-20 md:w-[285px]"
             >
               <Image
@@ -110,7 +223,7 @@ export function LogoIntro() {
             <motion.div
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
-              transition={{ duration: 0.7, delay: 0.85, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.7, delay: 0.95, ease: [0.22, 1, 0.36, 1] }}
               className="mt-4 h-[3px] w-44 sm:w-56 bg-brand-red rounded-full origin-center"
             />
 
@@ -118,7 +231,7 @@ export function LogoIntro() {
             <motion.h2
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.4 }}
+              transition={{ duration: 0.6, delay: 1.6 }}
               className="mt-6 font-serif-display text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground"
             >
               What is{" "}
@@ -127,27 +240,23 @@ export function LogoIntro() {
             <motion.p
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.9 }}
+              transition={{ duration: 0.6, delay: 2.2 }}
               className="mt-2 text-sm sm:text-base text-muted-foreground max-w-md"
             >
               India&rsquo;s fastest-growing business networking community — helping
               entrepreneurs connect, collaborate and grow.
             </motion.p>
 
-            {/* Phase 3 — benefits (staggered) */}
+            {/* Phase 3 — benefits (staggered, slower for 15s) */}
             <div className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl">
               {BENEFITS.map((b, i) => {
-                const delay = 2.6 + i * 0.6;
+                const delay = 3.2 + i * 1.0;
                 return (
                   <motion.div
                     key={b.title}
                     initial={{ opacity: 0, y: 24, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{
-                      duration: 0.55,
-                      delay,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
+                    transition={{ duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] }}
                     className="rounded-2xl border border-brand-red/15 bg-white shadow-lg p-3.5 sm:p-4 flex flex-col items-center text-center"
                   >
                     <motion.div
@@ -173,7 +282,7 @@ export function LogoIntro() {
             <motion.p
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 6.4 }}
+              transition={{ duration: 0.6, delay: 11 }}
               className="mt-7 font-script text-brand-red text-xl sm:text-2xl"
             >
               Connect. Collaborate. Grow Big.
@@ -181,7 +290,7 @@ export function LogoIntro() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 7 }}
+              transition={{ delay: 12 }}
               className="mt-3 flex items-center gap-1.5"
             >
               <motion.span
@@ -195,7 +304,25 @@ export function LogoIntro() {
             </motion.div>
           </div>
 
-          {/* 8s progress bar */}
+          {/* tap-for-sound hint (browsers block autoplay until first gesture) */}
+          {muted && (
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ delay: 1.5 }}
+              onClick={() => {
+                ctxRef.current?.resume().then(() => setMuted(false)).catch(() => {});
+              }}
+              className="absolute bottom-16 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full bg-brand-black/90 text-white px-4 py-2 text-xs font-medium shadow-lg backdrop-blur hover:bg-brand-black transition-colors"
+            >
+              <Volume2 className="h-4 w-4 text-brand-red" />
+              Tap for sound
+            </motion.button>
+          )}
+
+          {/* 15s progress bar */}
           <motion.div
             initial={{ width: "0%" }}
             animate={{ width: "100%" }}
