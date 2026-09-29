@@ -21,7 +21,7 @@ const BENEFITS = [
   {
     icon: Users,
     title: "Connect",
-    desc: "Across 90+ cities & 200+ chapters",
+    desc: "Build your city chapter",
   },
   {
     icon: Share2,

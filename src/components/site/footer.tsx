@@ -59,7 +59,7 @@ export function Footer() {
                 <span className="text-brand-red">big</span>?
               </h2>
               <p className="mt-2 text-white/65 max-w-lg">
-                Join entrepreneurs across 90+ cities. Start with Prime for just
+                Join entrepreneurs across India. Start with Prime for just
                 ₹9,999 lifetime — and grow from there.
               </p>
             </div>

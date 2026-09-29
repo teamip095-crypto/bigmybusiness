@@ -26,7 +26,7 @@ const pacifico = Pacifico({
 export const metadata: Metadata = {
   title: "Big My Business | India's Fastest-Growing Business Networking Community",
   description:
-    "Big My Business is a premier business networking community helping entrepreneurs, startups, and business owners connect, collaborate and grow across 90+ cities. Join Prime & Privilege memberships, attend events, and grow your network.",
+    "Big My Business is a premier business networking community helping entrepreneurs, startups, and business owners connect, collaborate and grow across India. Join Prime & Privilege memberships, attend events, and grow your network.",
   keywords: [
     "Big My Business",
     "business networking",

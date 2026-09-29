@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatedCounter } from "./animated-counter";
+import { BuildCityChapterCard } from "./build-city-chapter";
 import { HERO_STATS, PARTNER_CATEGORIES } from "@/lib/site-data";
 
 const container = {
@@ -48,7 +49,7 @@ export function Hero() {
               <span className="rounded-full bg-brand-red text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
                 New
               </span>
-              Prime Memberships now open for Bhilai &amp; 90+ cities
+              Prime Memberships now open for Bhilai, Raipur & beyond
               <Sparkles className="h-3.5 w-3.5" />
             </motion.div>
 
@@ -87,7 +88,7 @@ export function Hero() {
             >
               India&rsquo;s fastest-growing{" "}
               <span className="font-semibold text-foreground">business networking community</span>{" "}
-              for entrepreneurs, startups and business owners. Connect across 90+ cities,
+              for entrepreneurs, startups and business owners. Connect across India,
               exchange qualified referrals, and turn relationships into real revenue.
             </motion.p>
 
@@ -130,14 +131,14 @@ export function Hero() {
               <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-brand-red" />
-                200+ active chapters
+                Pan-India network
               </div>
             </motion.div>
 
             {/* mini stats row */}
             <motion.div
               variants={item}
-              className="mt-9 grid grid-cols-2 sm:grid-cols-4 gap-3"
+              className="mt-9 grid grid-cols-2 sm:grid-cols-3 gap-3"
             >
               {HERO_STATS.map((s) => (
                 <div
@@ -153,6 +154,7 @@ export function Hero() {
                   <p className="text-[10px] text-muted-foreground">{s.sub}</p>
                 </div>
               ))}
+              <BuildCityChapterCard variant="compact" />
             </motion.div>
           </motion.div>
 
@@ -301,7 +303,7 @@ function HeroVisual() {
         </div>
         <div>
           <p className="text-[10px] text-muted-foreground">Across</p>
-          <p className="text-xs font-bold">90+ cities</p>
+          <p className="text-xs font-bold">Pan-India</p>
         </div>
       </motion.div>
 

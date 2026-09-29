@@ -287,3 +287,51 @@ Stage Summary:
 - Intro redesigned on white background so the black logo is clearly visible; plays an 8-second animated story (logo → "what is Big My Business?" → 4 benefit pillars → tagline) with a progress bar, then reveals the homepage
 - 8 stats removed from EVERY location on the website (results grid, hero mini-stats, hero floating badges, journey body + badges, footer CTA); kept Cities, Chapters, States (CG·OD·MP), Business Categories
 - Website remains fully functional, lint clean, no errors
+
+---
+Task ID: 6
+Agent: Main Orchestrator
+Task: (1) Journey body "Officially established on August 12, 2020"; (2) journey badge → "Est. 2023"; (3) remove "90+ Cities" and "200+ Chapters" from EVERYWHERE; (4) in their place add a "Build Your City Chapter" CTA that opens a form → on submit goes to WhatsApp on both office numbers.
+
+Work Log:
+- Created new component src/components/site/build-city-chapter.tsx:
+  - BuildCityChapterCard (2 variants: compact = solid red mini card; grid = bordered dashed card) — both clickable, open a Dialog
+  - BuildCityChapterDialog: form (name*, phone*, city*, business, message) → on submit shows "Let's build it together!" with TWO green WhatsApp buttons (Bhilai Head Office + Raipur), each wa.me link pre-filled with "Hi Big My Business! I want to build a city chapter." + Name/Phone/City/Business/Message
+- site-data.ts:
+  - establishedYear 2019 → 2020 (so body reads "August 12, 2020")
+  - HERO_STATS: removed Cities (90) + Chapters (200) → now [States(3), Categories(320+)]
+  - RESULTS_GRID: removed Cities + Chapters → now [States(CG,OD,MP), Business Categories(320+)]
+  - Benefits "Application Access" desc: "across 90+ cities" → "across India"
+  - FAQ "What is Big My Business?" answer: "across 90+ cities" → "across India. Don't see your city yet? You can build a chapter there."
+- journey.tsx:
+  - Body: "across 90+ cities and 200+ chapters" → "across India and a growing chapter network"
+  - Badges: removed "200+ chapters" + "90+ cities"; now [Est. 2023, 3 States · CG, OD, MP] (badge year hardcoded to 2023 per user)
+  - Story card: replaced 3-stat grid (90+/200+/3) with a compact BuildCityChapter CTA card + caption "Currently across Chhattisgarh · Odisha · M.P."
+  - Results grid: changed to grid-cols-1 sm:grid-cols-2 lg:grid-cols-3; added BuildCityChapterCard (grid variant) as the 3rd item alongside States + Business Categories
+  - Removed unused Users/TrendingUp imports
+- hero.tsx:
+  - Announcement: "Bhilai & 90+ cities" → "Bhilai, Raipur & beyond"
+  - Subtext: "Connect across 90+ cities" → "Connect across India"
+  - Trust row: "200+ active chapters" → "Pan-India network"
+  - Mini-stats grid: grid-cols-2 sm:grid-cols-4 → grid-cols-2 sm:grid-cols-3 (2 stat cards + 1 BuildCityChapter compact CTA)
+  - Floating "90+ cities" badge → "Pan-India"
+- logo-intro.tsx: "Connect" benefit desc "Across 90+ cities & 200+ chapters" → "Build your city chapter"
+- footer.tsx CTA: "Join 6,500+ entrepreneurs across 90+ cities" → "Join entrepreneurs across India"
+- layout.tsx metadata: "across 90+ cities" → "across India"
+
+Verification (Agent Browser):
+- Journey DOM: has2020 ✓, hasEst2023 ✓, has90cities=false ✓, has200chapters=false ✓, hasBuildCity ✓
+- 3 BuildCityChapter CTAs present (hero compact e14, journey compact e126, results grid e47)
+- Clicked grid CTA → Dialog opened with form (name/phone/city/business/message + "Apply to build my chapter")
+- Filled form → submit → "Let's build it together!" + two WhatsApp buttons:
+  - Bhilai: https://wa.me/919424242043?text=Hi%20Big%20My%20Business!%20I%20want%20to%20build%20a%20city%20chapter... ✓
+  - Raipur: https://wa.me/919301056006?text=Hi%20Big%20My%20Business!%20I%20want%20to%20build%20a%20city%20chapter... ✓
+  - Both links carry the pre-filled chapter request (name/phone/city/business/message)
+- Hero mini-stats: States + Categories (+ BuildCityChapter card)
+- No console errors, lint clean, final grep CLEAN (no 90+/200+/Est. 2019/August 12 2019 anywhere), HTTP 200
+
+Stage Summary:
+- Journey established date = August 12, 2020; badge = Est. 2023
+- "90+ Cities" and "200+ Chapters" purged from EVERY location (hero stats/badges/text, results grid, journey body/badges/story card, footer CTA, benefits, FAQ, intro, metadata)
+- New "Build Your City Chapter" interactive CTA placed in 3 spots (hero mini-stats, results grid, journey story card); clicking opens a form that, on submit, redirects to WhatsApp on BOTH office numbers (Bhilai + Raipur) with the chapter request pre-filled
+- Website remains fully functional, lint clean, no errors

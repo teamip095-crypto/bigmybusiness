@@ -2,8 +2,9 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { MapPin, CalendarDays, Users, TrendingUp } from "lucide-react";
+import { MapPin, CalendarDays } from "lucide-react";
 import { AnimatedCounter } from "./animated-counter";
+import { BuildCityChapterCard } from "./build-city-chapter";
 import { RESULTS_GRID, SITE } from "@/lib/site-data";
 
 const fade = {
@@ -49,16 +50,15 @@ export function Journey() {
               built on a strong foundation of trust and shared values.
             </p>
             <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-relaxed">
-              With a presence across 90+ cities and 200+ chapters, we have been
+              With a presence across India and a growing chapter network, we have been
               instrumental in driving exponential growth for SMEs through structured,
               meaningful and result-oriented business networking.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
               {[
-                { icon: CalendarDays, label: `Est. ${SITE.establishedYear}` },
-                { icon: Users, label: "200+ chapters" },
-                { icon: TrendingUp, label: "90+ cities" },
+                { icon: CalendarDays, label: "Est. 2023" },
+                { icon: MapPin, label: "3 States · CG, OD, MP" },
               ].map((b) => (
                 <span
                   key={b.label}
@@ -106,25 +106,11 @@ export function Journey() {
                   <span className="text-white font-semibold"> real, referable revenue.</span>
                 </p>
 
-                <div className="mt-7 grid grid-cols-3 gap-2.5 sm:gap-3 max-w-sm">
-                  {[
-                    { k: "90+", v: "Cities" },
-                    { k: "200+", v: "Chapters" },
-                    { k: "3", v: "States" },
-                  ].map((s) => (
-                    <div
-                      key={s.v}
-                      className="rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md p-3 text-center"
-                    >
-                      <p className="font-serif-display text-xl sm:text-2xl font-extrabold text-brand-red">
-                        {s.k}
-                      </p>
-                      <p className="text-[11px] text-white/75 mt-0.5">{s.v}</p>
-                    </div>
-                  ))}
+                <div className="mt-7 max-w-sm">
+                  <BuildCityChapterCard variant="compact" />
                 </div>
                 <p className="mt-3 text-[11px] font-medium text-white/60">
-                  Chhattisgarh &middot; Odisha &middot; M.P.
+                  Currently across Chhattisgarh &middot; Odisha &middot; M.P.
                 </p>
               </div>
 
@@ -160,7 +146,7 @@ export function Journey() {
               hidden: {},
               show: { transition: { staggerChildren: 0.05 } },
             }}
-            className="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
+            className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
           >
             {RESULTS_GRID.map((r) => (
               <motion.div
@@ -189,6 +175,15 @@ export function Journey() {
                 </div>
               </motion.div>
             ))}
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                show: { opacity: 1, y: 0 },
+              }}
+              className="lg:col-span-1"
+            >
+              <BuildCityChapterCard variant="grid" className="h-full" />
+            </motion.div>
           </motion.div>
         </div>
       </div>

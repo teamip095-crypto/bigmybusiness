@@ -18,7 +18,7 @@ export const SITE = {
   ],
   addressSingle:
     "Karma Bhawan, 1st Floor, Near Shastri Government Hospital, G.E. Road, Supela, Bhilai (Chhattisgarh)",
-  establishedYear: 2019,
+  establishedYear: 2020,
   // All offices
   offices: [
     {
@@ -87,8 +87,6 @@ export const NAV_ITEMS: NavItem[] = [
 
 // Animated hero / journey statistics
 export const HERO_STATS = [
-  { value: 90, suffix: "+", label: "Cities", sub: "across India" },
-  { value: 200, suffix: "+", label: "Chapters", sub: "active meetings" },
   { value: 3, suffix: "", label: "States", sub: "CG · OD · MP" },
   { value: 320, suffix: "+", label: "Categories", sub: "business verticals" },
 ];
@@ -96,8 +94,6 @@ export const HERO_STATS = [
 // "What Result We Get" grid
 export const RESULTS_GRID = [
   { label: "States (CG, OD, MP)", value: 3, suffix: "" },
-  { label: "Cities", value: 90, suffix: "+" },
-  { label: "Chapters", value: 200, suffix: "+" },
   { label: "Business Categories", value: 320, suffix: "+" },
 ];
 
@@ -111,7 +107,7 @@ export type Benefit = {
 export const BENEFITS: Benefit[] = [
   {
     title: "Application Access",
-    desc: "Unlock the Big My Business app to connect with members across 90+ cities from your phone.",
+    desc: "Unlock the Big My Business app to connect with members across India from your phone.",
     icon: "Smartphone",
   },
   {
@@ -415,7 +411,7 @@ export const TESTIMONIALS: Testimonial[] = [
 export const FAQS = [
   {
     q: "What is Big My Business?",
-    a: "Big My Business is one of India's fastest-growing business networking communities. We help entrepreneurs, startups and business owners connect, collaborate and grow through structured, meaningful and result-oriented networking across 90+ cities.",
+    a: "Big My Business is one of India's fastest-growing business networking communities. We help entrepreneurs, startups and business owners connect, collaborate and grow through structured, meaningful and result-oriented networking across India. Don't see your city yet? You can build a chapter there."
   },
   {
     q: "Who can become a member?",
