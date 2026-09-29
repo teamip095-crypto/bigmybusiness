@@ -64,16 +64,28 @@ export function Navbar() {
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand-red animate-pulse" />
               India&rsquo;s fastest-growing business networking community
             </p>
-            <div className="flex items-center gap-5">
+            <div className="flex items-center gap-3">
+              {SITE.offices.map((o, i) => (
+                <a
+                  key={o.cityShort}
+                  href={`tel:${o.phone}`}
+                  className="flex items-center gap-1.5 hover:text-brand-red transition-colors"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                  <span className="text-white/55">{o.cityShort}:</span>
+                  {o.phoneDisplay}
+                  {i < SITE.offices.length - 1 && (
+                    <span className="text-white/30 ml-3">|</span>
+                  )}
+                </a>
+              ))}
+              <span className="text-white/30 hidden lg:inline">|</span>
               <a
-                href={`tel:${SITE.phone}`}
-                className="flex items-center gap-1.5 hover:text-brand-red transition-colors"
+                href={`mailto:${SITE.email}`}
+                className="hidden lg:flex items-center gap-1.5 hover:text-brand-red transition-colors"
               >
-                <Phone className="h-3.5 w-3.5" />
-                {SITE.phoneDisplay}
+                {SITE.email}
               </a>
-              <span className="text-white/30">|</span>
-              <span>{SITE.addressSingle}</span>
             </div>
           </div>
         </div>

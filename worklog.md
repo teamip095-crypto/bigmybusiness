@@ -90,3 +90,43 @@ Stage Summary:
 - 11 real business photos integrated across 4 sections (Events, Blog, Testimonials, Journey)
 - All photos local in public/images/ (no external URL dependency at runtime)
 - Website now visually rich, professional and beautiful with real imagery complementing the red/black/white brand theme
+
+---
+Task ID: 2
+Agent: Main Orchestrator
+Task: Update prices (Prime ₹9,999, Privilege ₹5,999 annual), fix footer logo visibility, set email to info@bigmybusiness.com, and add a second Raipur office (Gandhi Nagar, Pahari Chowk, Gudhiyari, Raipur, contact 9301056006).
+
+Work Log:
+- site-data.ts SITE:
+  - email → info@bigmybusiness.com
+  - Added `offices` array with two entries: Bhilai (Head Office, isPrimary, 9424242043) + Raipur (Gandhi Nagar, Pahari Chowk, Gudhiyari, 9301056006, mapQuery Gudhiyari Pahari Chowk Raipur)
+  - Kept top-level phone/addressSingle as Bhilai primary for backward compat
+- MEMBERSHIP_PLANS: Prime price ₹2,499 → ₹9,999 (priceNote "*exclusive of GST · one-time"); Privilege price "City-Specific" → ₹5,999 (priceNote "per year · exclusive of GST", period "Annual Membership")
+- FAQ: "What is the difference..." answer now says Prime ₹9,999 / Privilege ₹5,999/year; "Where is the head office located?" → "Where are your offices located?" with both offices + both phones
+- hero.tsx: outline button now shows "₹9,999 / Prime Life Plan"
+- footer.tsx: 
+  - Logo fix: wrapped logo in white rounded chip (bg-white, rounded-xl, px-3 py-2, h-14 w-[220px]) so the black logo text is visible on the dark footer
+  - CTA strip price: ₹2,499 → ₹9,999
+  - Brand column now loops SITE.offices showing both offices (city label, phone, address) + email
+- contact.tsx:
+  - Select options: "Prime Membership (₹9,999 life)" + "Privilege Membership (₹5,999/yr)"
+  - Dark info card redesigned: "Visit our offices" with 2-col grid of office cards (Bhilai highlighted as Head Office, Raipur) each with address + phone, plus email + office hours
+  - Replaced single map with TWO maps in 2-col grid (Bhilai + Raipur), each with a dark header bar showing city + Head Office badge for Bhilai
+- navbar.tsx: top utility strip now shows both office phones (Bhilai: ... | Raipur: ...) + email on lg screens
+
+Verification (Agent Browser + DOM):
+- Hero button DOM: "₹9,999 / Prime Life Plan" ✓
+- Membership card prices DOM: Prime ₹9,999, Privilege ₹5,999 ✓
+- Footer logo now visible on white chip (VLM confirmed) ✓
+- Footer shows both offices: Bhilai +91 94242 42043 + Raipur +91 93010 56006 + email info@bigmybusiness.com ✓
+- Contact section DOM: 2 maps (Bhilai + Raipur), email info@bigmybusiness.com, both office addresses ✓
+- Navbar top strip DOM: both phones shown ✓
+- FAQ question 07: "Where are your offices located?" ✓
+- No console errors before/after reload, lint clean, HTTP 200
+
+Stage Summary:
+- All pricing updated to ₹9,999 (Prime life) / ₹5,999 (Privilege annual) across hero, membership cards, contact form select, FAQ
+- Footer logo fixed (white chip background makes black logo text visible)
+- Email is now info@bigmybusiness.com everywhere
+- Second Raipur office fully added (address + phone + map) in navbar, footer, contact section, FAQ
+- Website remains fully functional, lint clean, no errors

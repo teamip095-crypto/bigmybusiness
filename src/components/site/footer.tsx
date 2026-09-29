@@ -60,7 +60,7 @@ export function Footer() {
               </h2>
               <p className="mt-2 text-white/65 max-w-lg">
                 Join 6,500+ entrepreneurs across 90+ cities. Start with Prime for just
-                ₹2,499 lifetime — and grow from there.
+                ₹9,999 lifetime — and grow from there.
               </p>
             </div>
             <div className="flex flex-wrap gap-3 lg:justify-end">
@@ -94,12 +94,13 @@ export function Footer() {
           <div className="grid gap-10 lg:gap-8 lg:grid-cols-[1.4fr_1fr_1fr_1.1fr]">
             {/* brand */}
             <div>
-              <div className="relative h-12 w-[210px]">
+              <div className="relative inline-flex items-center rounded-xl bg-white px-3 py-2 h-14 w-[220px] shadow-lg">
                 <Image
                   src="/images/logo.png"
                   alt="Big My Business logo"
                   fill
-                  className="object-contain object-left"
+                  className="object-contain object-left p-1"
+                  sizes="220px"
                 />
               </div>
               <p className="mt-4 text-sm text-white/60 leading-relaxed max-w-xs">
@@ -107,14 +108,25 @@ export function Footer() {
                 entrepreneurs connect, collaborate and grow big.
               </p>
 
-              <div className="mt-5 space-y-2.5 text-sm">
-                <a
-                  href={`tel:${SITE.phone}`}
-                  className="flex items-center gap-2.5 text-white/75 hover:text-brand-red transition-colors"
-                >
-                  <Phone className="h-4 w-4 text-brand-red" />
-                  {SITE.phoneDisplay}
-                </a>
+              <div className="mt-5 space-y-3 text-sm">
+                {SITE.offices.map((o) => (
+                  <div key={o.cityShort} className="space-y-1.5">
+                    <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brand-red">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {o.city}
+                    </p>
+                    <a
+                      href={`tel:${o.phone}`}
+                      className="flex items-center gap-2.5 pl-5 text-white/75 hover:text-brand-red transition-colors"
+                    >
+                      <Phone className="h-3.5 w-3.5 text-brand-red" />
+                      {o.phoneDisplay}
+                    </a>
+                    <p className="flex items-start gap-2.5 pl-5 text-white/65">
+                      <span className="leading-relaxed">{o.addressSingle}</span>
+                    </p>
+                  </div>
+                ))}
                 <a
                   href={`mailto:${SITE.email}`}
                   className="flex items-center gap-2.5 text-white/75 hover:text-brand-red transition-colors"
@@ -122,10 +134,6 @@ export function Footer() {
                   <Mail className="h-4 w-4 text-brand-red" />
                   {SITE.email}
                 </a>
-                <p className="flex items-start gap-2.5 text-white/75">
-                  <MapPin className="h-4 w-4 text-brand-red mt-0.5 shrink-0" />
-                  <span className="leading-relaxed">{SITE.addressSingle}</span>
-                </p>
               </div>
             </div>
 

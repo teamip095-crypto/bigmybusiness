@@ -112,7 +112,7 @@ export function Hero() {
                 className="h-12 px-6 text-base font-semibold border-2 border-black/15 hover:border-brand-red hover:text-brand-red bg-white"
               >
                 <Link href="#memberships">
-                  <span className="text-brand-red font-bold">₹2,499</span>
+                  <span className="text-brand-red font-bold">₹9,999</span>
                   <span className="text-muted-foreground font-normal mx-1.5">/</span>
                   Prime Life Plan
                 </Link>

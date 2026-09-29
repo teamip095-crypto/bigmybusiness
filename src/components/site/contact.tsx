@@ -203,8 +203,8 @@ export function Contact() {
                       <SelectValue placeholder="Select a membership or query" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="prime">Prime Membership (₹2,499 life)</SelectItem>
-                      <SelectItem value="privilege">Privilege Membership (city)</SelectItem>
+                      <SelectItem value="prime">Prime Membership (₹9,999 life)</SelectItem>
+                      <SelectItem value="privilege">Privilege Membership (₹5,999/yr)</SelectItem>
                       <SelectItem value="franchise">Start a city franchise</SelectItem>
                       <SelectItem value="event">Event / webinar query</SelectItem>
                       <SelectItem value="awards">Award nomination</SelectItem>
@@ -263,77 +263,100 @@ export function Contact() {
             <div className="rounded-3xl bg-brand-black text-white p-6 sm:p-8 relative overflow-hidden">
               <div className="absolute inset-0 bg-grid-dark opacity-30" />
               <div className="relative">
-                <h3 className="font-serif-display text-xl font-bold">Visit our office</h3>
+                <h3 className="font-serif-display text-xl font-bold">Visit our offices</h3>
                 <p className="mt-1 text-sm text-white/65">
-                  Walk in for a chapter meeting or membership query.
+                  Walk in for a chapter meeting or membership query — at either location.
                 </p>
 
-                <ul className="mt-6 space-y-4 text-sm">
-                  <li className="flex items-start gap-3">
-                    <span className="shrink-0 mt-0.5 h-9 w-9 rounded-xl bg-brand-red grid place-items-center">
-                      <MapPin className="h-5 w-5 text-white" />
-                    </span>
-                    <div>
-                      <p className="text-white/55 text-xs uppercase tracking-wider">Address</p>
-                      <p className="mt-1 font-medium leading-relaxed">
-                        {SITE.addressLines.map((l, i) => (
+                <div className="mt-6 grid sm:grid-cols-2 gap-5">
+                  {SITE.offices.map((o) => (
+                    <div
+                      key={o.cityShort}
+                      className={`rounded-2xl border p-4 ${
+                        o.isPrimary
+                          ? "border-brand-red/40 bg-brand-red/5"
+                          : "border-white/10 bg-white/[0.03]"
+                      }`}
+                    >
+                      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brand-red">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {o.city}
+                      </p>
+                      <p className="mt-2 text-sm font-medium leading-relaxed text-white/90">
+                        {o.addressLines.map((l, i) => (
                           <span key={i} className="block">
                             {l}
                           </span>
                         ))}
                       </p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="shrink-0 mt-0.5 h-9 w-9 rounded-xl bg-brand-red grid place-items-center">
-                      <Phone className="h-5 w-5 text-white" />
-                    </span>
-                    <div>
-                      <p className="text-white/55 text-xs uppercase tracking-wider">Phone</p>
                       <a
-                        href={`tel:${SITE.phone}`}
-                        className="mt-1 font-medium hover:text-brand-red transition-colors block"
+                        href={`tel:${o.phone}`}
+                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-white hover:text-brand-red transition-colors"
                       >
-                        {SITE.phoneDisplay}
+                        <Phone className="h-4 w-4 text-brand-red" />
+                        {o.phoneDisplay}
                       </a>
                     </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="shrink-0 mt-0.5 h-9 w-9 rounded-xl bg-brand-red grid place-items-center">
+                  ))}
+                </div>
+
+                <ul className="mt-5 space-y-3 text-sm">
+                  <li className="flex items-center gap-3">
+                    <span className="shrink-0 h-9 w-9 rounded-xl bg-brand-red grid place-items-center">
                       <Mail className="h-5 w-5 text-white" />
                     </span>
                     <div>
                       <p className="text-white/55 text-xs uppercase tracking-wider">Email</p>
                       <a
                         href={`mailto:${SITE.email}`}
-                        className="mt-1 font-medium hover:text-brand-red transition-colors block"
+                        className="font-medium hover:text-brand-red transition-colors"
                       >
                         {SITE.email}
                       </a>
                     </div>
                   </li>
-                  <li className="flex items-start gap-3">
-                    <span className="shrink-0 mt-0.5 h-9 w-9 rounded-xl bg-brand-red grid place-items-center">
+                  <li className="flex items-center gap-3">
+                    <span className="shrink-0 h-9 w-9 rounded-xl bg-brand-red grid place-items-center">
                       <Clock className="h-5 w-5 text-white" />
                     </span>
                     <div>
                       <p className="text-white/55 text-xs uppercase tracking-wider">Office hours</p>
-                      <p className="mt-1 font-medium">Mon – Sat · 10:00 AM – 7:00 PM</p>
+                      <p className="font-medium">Mon – Sat · 10:00 AM – 7:00 PM</p>
                     </div>
                   </li>
                 </ul>
               </div>
             </div>
 
-            {/* Map embed */}
-            <div className="rounded-3xl overflow-hidden border border-black/8 shadow-xl flex-1 min-h-[260px]">
-              <iframe
-                title="Big My Business office location on map"
-                src="https://www.google.com/maps?q=Shastri+Government+Hospital+Supela+Bhilai&output=embed"
-                className="w-full h-full min-h-[260px]"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
+            {/* Two maps - Bhilai + Raipur */}
+            <div className="grid grid-cols-2 gap-4">
+              {SITE.offices.map((o) => (
+                <div
+                  key={o.cityShort}
+                  className="rounded-2xl overflow-hidden border border-black/8 shadow-xl"
+                >
+                  <div className="bg-brand-black text-white px-3 py-2 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-xs font-semibold">
+                      <MapPin className="h-3.5 w-3.5 text-brand-red" />
+                      {o.cityShort}
+                    </span>
+                    {o.isPrimary && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-brand-red bg-brand-red/10 px-1.5 py-0.5 rounded">
+                        Head Office
+                      </span>
+                    )}
+                  </div>
+                  <iframe
+                    title={`Big My Business ${o.cityShort} office location on map`}
+                    src={`https://www.google.com/maps?q=${encodeURIComponent(
+                      o.mapQuery
+                    )}&output=embed`}
+                    className="w-full h-40 sm:h-44"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              ))}
             </div>
           </motion.div>
         </div>

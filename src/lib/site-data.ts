@@ -6,9 +6,10 @@ export const SITE = {
   brand: "Big My Business",
   brandShort: "BMB",
   tagline: "Connect. Collaborate. Grow Big.",
+  // Primary office (Bhilai HQ) - kept for backward-compat references
   phone: "9424242043",
   phoneDisplay: "+91 94242 42043",
-  email: "info@bigmybusiness.in",
+  email: "info@bigmybusiness.com",
   addressLines: [
     "Karma Bhawan, 1st Floor",
     "Near Shastri Government Hospital",
@@ -18,6 +19,40 @@ export const SITE = {
   addressSingle:
     "Karma Bhawan, 1st Floor, Near Shastri Government Hospital, G.E. Road, Supela, Bhilai (Chhattisgarh)",
   establishedYear: 2019,
+  // All offices
+  offices: [
+    {
+      city: "Bhilai (Head Office)",
+      cityShort: "Bhilai",
+      isPrimary: true,
+      phone: "9424242043",
+      phoneDisplay: "+91 94242 42043",
+      addressLines: [
+        "Karma Bhawan, 1st Floor",
+        "Near Shastri Government Hospital",
+        "G.E. Road, Supela",
+        "Bhilai, Chhattisgarh",
+      ],
+      addressSingle:
+        "Karma Bhawan, 1st Floor, Near Shastri Government Hospital, G.E. Road, Supela, Bhilai (Chhattisgarh)",
+      mapQuery: "Shastri Government Hospital Supela Bhilai",
+    },
+    {
+      city: "Raipur",
+      cityShort: "Raipur",
+      isPrimary: false,
+      phone: "9301056006",
+      phoneDisplay: "+91 93010 56006",
+      addressLines: [
+        "Gandhi Nagar, Pahari Chowk",
+        "Gudhiyari",
+        "Raipur, Chhattisgarh",
+      ],
+      addressSingle:
+        "Gandhi Nagar, Pahari Chowk, Gudhiyari, Raipur (Chhattisgarh)",
+      mapQuery: "Gudhiyari Pahari Chowk Raipur",
+    },
+  ],
   social: {
     facebook: "#",
     instagram: "#",
@@ -148,8 +183,8 @@ export const MEMBERSHIP_PLANS: Plan[] = [
     id: "prime",
     name: "Prime Membership",
     badge: "Most Popular",
-    price: "₹2,499",
-    priceNote: "*exclusive of GST",
+    price: "₹9,999",
+    priceNote: "*exclusive of GST · one-time",
     period: "Life Membership",
     description:
       "The most popular choice for active entrepreneurs who want to grow through structured networking.",
@@ -169,9 +204,9 @@ export const MEMBERSHIP_PLANS: Plan[] = [
     id: "privilege",
     name: "Privilege Membership",
     badge: "Premium",
-    price: "City-Specific",
-    priceNote: "fee set by city executive director",
-    period: "One Year Membership",
+    price: "₹5,999",
+    priceNote: "per year · exclusive of GST",
+    period: "Annual Membership",
     description:
       "A premium city-chapter powered plan for entrepreneurs who want weekly in-person networking and leadership.",
     features: [
@@ -394,7 +429,7 @@ export const FAQS = [
   },
   {
     q: "What is the difference between Prime and Privilege membership?",
-    a: "Prime is a one-time life membership (₹2,499, exclusive of GST) ideal for those who want app-based networking and online webinars. Privilege is a city-chapter powered annual plan with physical meetings every 15 days, leadership opportunities and a dedicated WhatsApp community — its fee is city-specific.",
+    a: "Prime is a one-time life membership (₹9,999, exclusive of GST) ideal for those who want app-based networking and online webinars. Privilege is a city-chapter powered annual plan (₹5,999/year, exclusive of GST) with physical meetings every 15 days, leadership opportunities and a dedicated WhatsApp community.",
   },
   {
     q: "How do referrals work inside the community?",
@@ -409,8 +444,8 @@ export const FAQS = [
     a: "Membership fees are non-refundable. Prime is a lifetime plan and Privilege is annual — both grant immediate access to the app, welcome kit and all listed benefits.",
   },
   {
-    q: "Where is the head office located?",
-    a: "Our office is at Karma Bhawan, 1st Floor, Near Shastri Government Hospital, G.E. Road, Supela, Bhilai (Chhattisgarh). You can reach us at +91 94242 42043.",
+    q: "Where are your offices located?",
+    a: "We have two offices in Chhattisgarh — our head office at Karma Bhawan, 1st Floor, Near Shastri Government Hospital, G.E. Road, Supela, Bhilai (call +91 94242 42043) and a Raipur office at Gandhi Nagar, Pahari Chowk, Gudhiyari, Raipur (call +91 93010 56006). You're welcome to walk in at either.",
   },
 ];
 
