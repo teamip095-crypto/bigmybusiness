@@ -426,3 +426,39 @@ Stage Summary:
 - Intro extended to 15 seconds with a light, impressive ambient melody (synthesised in-browser — I-V-vi-IV pads + sparkle arpeggio, fade in/out) that unlocks on first user gesture via a "Tap for sound" button (browser autoplay policy)
 - blog2 photo replaced with the user's Google Drive networking-meeting image (clean, no watermark)
 - Website remains fully functional, lint clean, no errors
+
+---
+Task ID: 10
+Agent: Main Orchestrator
+Task: (1) Testimonial photos still bad — make them proper closeup AND sharp (the bottom-left avatars); (2) intro sound should autoplay with NO "tap for sound" button/music logo.
+
+Work Log:
+- Testimonial photos: switched from internet search to AI image generation for guaranteed sharp closeup quality. Generated 5 tight closeup professional Indian-businessman headshots via `z-ai image` (864×1152 portrait, "extreme closeup ... face fills the frame, soft studio lighting"):
+  - t1.jpg (Adarsh) — bearded, navy blazer
+  - t2.jpg (Dhruv) — clean-shaven, light blue shirt
+  - t3.jpg (Ketan) — mustache, gray hair, charcoal suit
+  - t4.jpg (Umesh) — short beard, black suit
+  - t5.jpg (Ujjaval) — glasses, formal light shirt
+  - VLM-verified EACH: all "sharp, close-up headshot portrait of a professional Indian businessman, face fills frame"
+- testimonials.tsx avatar upgrade:
+  - size h-16/sm:h-20 → h-20 w-20 sm:h-24 sm:w-24 (bigger)
+  - sizes "(max-width:640px)64px,80px" → "192px" so next/image serves a 256px-wide image (sharp on retina) — DOM confirmed nW:192 (was 80, soft)
+  - object-cover object-center (closeup face centered in circle)
+  - stronger ring + shadow-brand-red/20 for premium frame
+- logo-intro.tsx autoplay fix:
+  - removed the `muted` state, the `Volume2` import, and the entire "🔊 Tap for sound" button block
+  - on intro mount: create AudioContext + schedule music, call ctx.resume() immediately (autoplay attempt)
+  - added transparent listeners (pointerdown, keydown, touchstart, wheel) on window → resume audio on the FIRST user gesture of ANY kind — no visible button needed; listeners auto-remove after first fire
+  - music still synthesised in-browser (I–V–vi–IV pads + sparkle arpeggio, 15s fade in/out)
+
+Verification (Agent Browser + VLM):
+- Intro DOM: "Tap for sound" text NOT present (false); VLM: "screen is clean with no 'Tap for sound' button or music logo visible" ✓
+- Testimonial avatar DOM: nW:192 (sharp), complete:true ✓
+- VLM on avatar: "sharp, close-up portrait of a man's face that fills the circle ... dark hair and beard ... looking at camera with slight smile" ✓
+- All 5 generated portraits VLM-confirmed sharp closeup Indian businessmen ✓
+- No console errors during intro+audio, lint clean, HTTP 200
+
+Stage Summary:
+- Testimonial avatars now generated as sharp, tight closeup professional portraits (face fills the circle), served at 256px for retina sharpness, in a larger 96px frame
+- Intro music autoplays (attempts resume on mount; otherwise resumes on the first natural user gesture) with NO visible "tap" button — clean intro screen
+- Website remains fully functional, lint clean, no errors

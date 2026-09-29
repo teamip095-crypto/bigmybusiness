@@ -8,7 +8,6 @@ import {
   Share2,
   Handshake,
   TrendingUp,
-  Volume2,
 } from "lucide-react";
 
 /**
@@ -119,7 +118,6 @@ function startMusic(): AudioContext | null {
 
 export function LogoIntro() {
   const [show, setShow] = useState(false);
-  const [muted, setMuted] = useState(true);
   const ctxRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
@@ -142,24 +140,23 @@ export function LogoIntro() {
     ctxRef.current = startMusic();
     const ctx = ctxRef.current;
     if (ctx) {
+      // Try to start immediately (some browsers allow it); otherwise resume on
+      // the FIRST user gesture of any kind — no visible "tap" button needed.
       const tryResume = () => {
-        ctx.resume().then(() => {
-          if (ctx.state === "running") {
-            setMuted(false);
-          }
-        }).catch(() => {});
+        ctx.resume().catch(() => {});
       };
       tryResume();
-      // listen for the first user gesture to unlock audio
       const unlock = () => {
         tryResume();
         window.removeEventListener("pointerdown", unlock);
         window.removeEventListener("keydown", unlock);
         window.removeEventListener("touchstart", unlock);
+        window.removeEventListener("wheel", unlock);
       };
       window.addEventListener("pointerdown", unlock, { once: true });
       window.addEventListener("keydown", unlock, { once: true });
       window.addEventListener("touchstart", unlock, { once: true });
+      window.addEventListener("wheel", unlock, { once: true });
     }
 
     const t = window.setTimeout(() => {
@@ -303,24 +300,6 @@ export function LogoIntro() {
               </span>
             </motion.div>
           </div>
-
-          {/* tap-for-sound hint (browsers block autoplay until first gesture) */}
-          {muted && (
-            <motion.button
-              type="button"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ delay: 1.5 }}
-              onClick={() => {
-                ctxRef.current?.resume().then(() => setMuted(false)).catch(() => {});
-              }}
-              className="absolute bottom-16 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full bg-brand-black/90 text-white px-4 py-2 text-xs font-medium shadow-lg backdrop-blur hover:bg-brand-black transition-colors"
-            >
-              <Volume2 className="h-4 w-4 text-brand-red" />
-              Tap for sound
-            </motion.button>
-          )}
 
           {/* 15s progress bar */}
           <motion.div
