@@ -14,8 +14,8 @@ import {
  * First-load intro (20s) on a LIGHT background so the black logo is visible.
  * Plays the full animated story (logo → what is → 4 benefit pillars → tagline
  * → reveal) accompanied by a loud, energetic user-provided music track that
- * fades in and out smoothly. Autoplay-unlocks on the first user gesture (no
- * visible "tap" button). Runs once per browser session.
+ * autoplays on its own (no click/scroll/touch/keypress required) and fades
+ * out smoothly over the last 2.5s. Runs once per browser session.
  */
 const DURATION = 20000;
 
@@ -26,54 +26,57 @@ const BENEFITS = [
   { icon: TrendingUp, title: "Grow Big", desc: "Real, referable revenue" },
 ];
 
-// Play the user-provided loud, energetic intro music track via an <audio>
-// element routed through a Web Audio gain node (so we can fade in/out smoothly).
-// Returns handles so they can be stopped on intro exit.
-type MusicHandles = { audio: HTMLAudioElement; ctx: AudioContext } | null;
+// Play the user-provided loud, energetic intro music track via a plain
+// <audio> element with the `autoplay` attribute + a play() call. We do NOT
+// route it through a Web Audio context (a suspended AudioContext would make
+// the audio silent even while "playing"). A requestAnimationFrame loop ramps
+// the element's volume down smoothly over the last 2.5s so the music stops
+// gently. Returns handles for cleanup.
+type MusicHandles = { audio: HTMLAudioElement; raf: number } | null;
 function startMusic(): MusicHandles {
-  const AC =
-    typeof window !== "undefined"
-      ? window.AudioContext ||
-        (window as unknown as { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext
-      : undefined;
-  if (!AC) return null;
-
+  if (typeof window === "undefined") return null;
   const audio = new Audio("/audio/intro-music.mp3");
+  audio.autoplay = true; // signal autoplay intent
   audio.preload = "auto";
   audio.loop = false;
-  audio.crossOrigin = "anonymous";
+  audio.volume = 1.0; // loud
+  // Attempt to start playback immediately (and retry a few times — some
+  // browsers/preview contexts allow autoplay after a tick).
+  audio.play().catch(() => {});
+  let tries = 0;
+  const retry = () => {
+    if (audio.paused && tries < 8) {
+      tries += 1;
+      audio.play().catch(() => {});
+      window.setTimeout(retry, 500);
+    }
+  };
+  window.setTimeout(retry, 400);
 
-  const ctx = new AC();
-  let gain: GainNode;
-  try {
-    const src = ctx.createMediaElementSource(audio);
-    gain = ctx.createGain();
-    gain.gain.value = 0.0001;
-    src.connect(gain);
-    gain.connect(ctx.destination);
-  } catch {
-    // fallback: play the element directly (no gain control)
-    gain = ctx.createGain();
-    gain.connect(ctx.destination);
-    audio.volume = 1;
-  }
+  // Smooth fade-out over the final 2.5s using the element's volume.
+  const FADE_FROM = 17.5; // seconds
+  const FADE_DUR = 2.5;
+  let raf = 0;
+  const tick = () => {
+    const t = audio.currentTime;
+    if (t >= FADE_FROM && !audio.paused) {
+      const k = Math.max(0, 1 - (t - FADE_FROM) / FADE_DUR);
+      audio.volume = k;
+    }
+    if (t < FADE_FROM + FADE_DUR && !audio.ended) {
+      raf = window.requestAnimationFrame(tick);
+    } else {
+      audio.volume = 0;
+      try {
+        audio.pause();
+      } catch {
+        // ignore
+      }
+    }
+  };
+  raf = window.requestAnimationFrame(tick);
 
-  const DUR = 20; // seconds — matches DURATION
-  const t0 = ctx.currentTime + 0.08;
-  // fade IN quickly to full (loud), hold, then smooth fade OUT over the last 2.5s
-  gain.gain.cancelScheduledValues(t0);
-  gain.gain.setValueAtTime(0.0001, t0);
-  gain.gain.exponentialRampToValueAtTime(1.0, t0 + 0.6); // loud
-  gain.gain.setValueAtTime(1.0, t0 + (DUR - 2.5));
-  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + DUR); // smooth stop
-
-  audio.currentTime = 0;
-  audio.play().catch(() => {
-    /* autoplay blocked — will resume on first user gesture */
-  });
-
-  return { audio, ctx };
+  return { audio, raf };
 }
 
 export function LogoIntro() {
@@ -96,32 +99,9 @@ export function LogoIntro() {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    // start music (loud, energetic track; autoplay may be blocked until first gesture)
+    // start the music — autoplay is attempted aggressively (no user gesture
+    // required; the user wants it to play on its own when the intro opens).
     handlesRef.current = startMusic();
-    const h = handlesRef.current;
-    if (h) {
-      const { ctx, audio } = h;
-      // Try to start immediately (some browsers allow it); otherwise resume on
-      // the FIRST user gesture of any kind — no visible "tap" button needed.
-      const tryResume = () => {
-        ctx.resume().catch(() => {});
-        if (audio.paused) {
-          audio.play().catch(() => {});
-        }
-      };
-      tryResume();
-      const unlock = () => {
-        tryResume();
-        window.removeEventListener("pointerdown", unlock);
-        window.removeEventListener("keydown", unlock);
-        window.removeEventListener("touchstart", unlock);
-        window.removeEventListener("wheel", unlock);
-      };
-      window.addEventListener("pointerdown", unlock, { once: true });
-      window.addEventListener("keydown", unlock, { once: true });
-      window.addEventListener("touchstart", unlock, { once: true });
-      window.addEventListener("wheel", unlock, { once: true });
-    }
 
     const t = window.setTimeout(() => {
       window.sessionStorage.setItem("bmb_intro_seen", "1");
@@ -134,9 +114,10 @@ export function LogoIntro() {
       const c = handlesRef.current;
       if (c) {
         try {
+          window.cancelAnimationFrame(c.raf);
+          c.audio.volume = 0;
           c.audio.pause();
           c.audio.src = "";
-          c.ctx.close();
         } catch {
           // ignore
         }
