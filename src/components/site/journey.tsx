@@ -49,16 +49,16 @@ export function Journey() {
               built on a strong foundation of trust and shared values.
             </p>
             <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-relaxed">
-              With a presence across 90+ cities and a growing membership of 6,500+ members,
-              we have been instrumental in driving exponential growth for SMEs through
-              structured, meaningful and result-oriented business networking.
+              With a presence across 90+ cities and 200+ chapters, we have been
+              instrumental in driving exponential growth for SMEs through structured,
+              meaningful and result-oriented business networking.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
               {[
                 { icon: CalendarDays, label: `Est. ${SITE.establishedYear}` },
-                { icon: Users, label: "6,500+ members" },
-                { icon: TrendingUp, label: "₹250 Cr+ business" },
+                { icon: Users, label: "200+ chapters" },
+                { icon: TrendingUp, label: "90+ cities" },
               ].map((b) => (
                 <span
                   key={b.label}

@@ -235,3 +235,55 @@ Stage Summary:
 - All watermarked stock photos replaced with clean Pexels/Unsplash versions (13/13 verified clean)
 - Events show no specific dates; Awards button says "Nominate for awards"; States stat shows 3 (CG, OD, MP)
 - Website remains fully functional, lint clean, no errors
+
+---
+Task ID: 5
+Agent: Main Orchestrator
+Task: (1) Intro logo animation — black bg hides the logo, fix background; make intro 8 seconds with an animated "what is Big My Business + benefits" story THEN reveal homepage. (2) Remove these stats from the entire website: 6500 Members, V2V Connect, Reference Pass, 250+ Cr Business Done, 1200 Collaboration, 380+ Joint Ventures, 540+ Completed Webinar, 260+ Inter-City Meet.
+
+Work Log:
+- Grepped the whole src/ to map every occurrence of the removable stats:
+  - 6500/6,500: journey body + journey badge, hero trust row, hero floating "Verified" badge, footer CTA, site-data HERO_STATS + RESULTS_GRID
+  - ₹250 Cr: journey badge, hero floating "Business done" badge, site-data HERO_STATS
+  - V2V/Reference/Cr Business/Collaborations/Joint/Webinar/Inter-City: RESULTS_GRID only
+- site-data.ts:
+  - HERO_STATS: removed Members (6500) + Business Done (250 Cr); replaced with States (3, "CG · OD · MP") + Categories (320+, "business verticals") → now Cities/Chapters/States/Categories
+  - RESULTS_GRID: removed Members, V2V Connects, Reference Pass, Cr Business Done, Collaborations, Joint Ventures, Completed Webinars, Inter-City Meets → now only States (CG, OD, MP), Cities, Chapters, Business Categories (4 items)
+- hero.tsx:
+  - Trust row: "6,500+ active members" → "200+ active chapters"
+  - Floating "Verified" badge: "6,500+ members" → "90+ cities"
+  - Floating "Business done" badge: "₹250 Cr+" → "320+ categories"
+- journey.tsx:
+  - Body text: "growing membership of 6,500+ members" → "200+ chapters"
+  - Badges: "6,500+ members" → "200+ chapters"; "₹250 Cr+ business" → "90+ cities"
+- footer.tsx CTA: "Join 6,500+ entrepreneurs across 90+ cities" → "Join entrepreneurs across 90+ cities"
+- logo-intro.tsx FULL REDESIGN:
+  - Background: black → WHITE (so the black "Big My Business" logo text is clearly visible)
+  - Duration: 2.6s → 8s
+  - Now plays an animated story sequence:
+    - Phase 1 (0–1.2s): logo scales in + red underline draws beneath
+    - Phase 2 (1.4–2.5s): "What is Big My Business?" heading + "India's fastest-growing business networking community" subtitle
+    - Phase 3 (2.6–5s): 4 benefit cards animate in staggered — Connect (Users, "Across 90+ cities & 200+ chapters"), Refer (Share2, "Qualified business referrals"), Collaborate (Handshake, "Partnerships & growth"), Grow Big (TrendingUp, "Real, referable revenue")
+    - Phase 4 (6.4–8s): tagline "Connect. Collaborate. Grow Big." + "Entering the experience" loader dots
+    - After 8s: overlay slides up + fades, revealing the homepage
+  - Added an 8s linear progress bar at the bottom in brand-red
+  - Soft red radial glow + faint grid on white for elegance
+  - Still sessionStorage-guarded (once per session); body scroll locked during play; SSR-safe; lint-clean
+
+Verification (Agent Browser):
+- Intro sequence captured at 1s/3s/5s/7s/9s:
+  - 1s: logo clearly VISIBLE on light/white background ✓ (was invisible on black)
+  - 3s: "What is Big My Business?" heading + description ✓
+  - 5s: logo + heading + description + 4 benefit cards ✓
+  - 7s: "Entering the experience" loader ✓
+  - 9s: full homepage revealed (8s + 0.9s exit) ✓
+- Results grid DOM: ["States (CG, OD, MP)", "Cities", "Chapters", "Business Categories"] ✓ (8 removed stats gone)
+- Hero mini stats DOM: ["Cities", "Chapters", "States", "Categories"] ✓
+- Journey story card: "90+", "200+", "3" ✓
+- Final grep: CLEAN — no 6500/₹250/V2V/Reference/Joint/Webinar/Inter-City anywhere ✓
+- No console errors before/after reload, lint clean, HTTP 200
+
+Stage Summary:
+- Intro redesigned on white background so the black logo is clearly visible; plays an 8-second animated story (logo → "what is Big My Business?" → 4 benefit pillars → tagline) with a progress bar, then reveals the homepage
+- 8 stats removed from EVERY location on the website (results grid, hero mini-stats, hero floating badges, journey body + badges, footer CTA); kept Cities, Chapters, States (CG·OD·MP), Business Categories
+- Website remains fully functional, lint clean, no errors

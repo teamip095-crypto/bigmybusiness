@@ -130,7 +130,7 @@ export function Hero() {
               <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-brand-red" />
-                6,500+ active members
+                200+ active chapters
               </div>
             </motion.div>
 
@@ -300,8 +300,8 @@ function HeroVisual() {
           <ShieldCheck className="h-5 w-5 text-brand-red" />
         </div>
         <div>
-          <p className="text-[10px] text-muted-foreground">Verified</p>
-          <p className="text-xs font-bold">6,500+ members</p>
+          <p className="text-[10px] text-muted-foreground">Across</p>
+          <p className="text-xs font-bold">90+ cities</p>
         </div>
       </motion.div>
 
@@ -310,9 +310,9 @@ function HeroVisual() {
         transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
         className="absolute -right-4 bottom-16 rounded-2xl bg-white shadow-xl border border-black/5 p-3"
       >
-        <p className="text-[10px] text-muted-foreground mb-1">Business done</p>
+        <p className="text-[10px] text-muted-foreground mb-1">Business verticals</p>
         <p className="font-serif-display text-xl font-extrabold text-brand-red">
-          ₹250 Cr+
+          320+ categories
         </p>
         <div className="mt-1 h-1 w-20 rounded-full bg-brand-red/15 overflow-hidden">
           <motion.div

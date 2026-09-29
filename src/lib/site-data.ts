@@ -88,9 +88,9 @@ export const NAV_ITEMS: NavItem[] = [
 // Animated hero / journey statistics
 export const HERO_STATS = [
   { value: 90, suffix: "+", label: "Cities", sub: "across India" },
-  { value: 6500, suffix: "+", label: "Members", sub: "and growing" },
   { value: 200, suffix: "+", label: "Chapters", sub: "active meetings" },
-  { value: 250, suffix: " Cr+", label: "Business Done", sub: "through referrals" },
+  { value: 3, suffix: "", label: "States", sub: "CG · OD · MP" },
+  { value: 320, suffix: "+", label: "Categories", sub: "business verticals" },
 ];
 
 // "What Result We Get" grid
@@ -98,15 +98,7 @@ export const RESULTS_GRID = [
   { label: "States (CG, OD, MP)", value: 3, suffix: "" },
   { label: "Cities", value: 90, suffix: "+" },
   { label: "Chapters", value: 200, suffix: "+" },
-  { label: "Members", value: 6500, suffix: "+" },
-  { label: "V2V Connects", value: 18000, suffix: "+" },
-  { label: "Reference Pass", value: 45000, suffix: "+" },
-  { label: "Cr Business Done", value: 250, suffix: "+" },
   { label: "Business Categories", value: 320, suffix: "+" },
-  { label: "Collaborations", value: 1200, suffix: "+" },
-  { label: "Joint Ventures", value: 380, suffix: "+" },
-  { label: "Completed Webinars", value: 540, suffix: "+" },
-  { label: "Inter-City Meets", value: 260, suffix: "+" },
 ];
 
 // Benefits of joining
