@@ -462,3 +462,32 @@ Stage Summary:
 - Testimonial avatars now generated as sharp, tight closeup professional portraits (face fills the circle), served at 256px for retina sharpness, in a larger 96px frame
 - Intro music autoplays (attempts resume on mount; otherwise resumes on the first natural user gesture) with NO visible "tap" button — clean intro screen
 - Website remains fully functional, lint clean, no errors
+
+---
+Task ID: 11
+Agent: Main Orchestrator
+Task: Make intro music LOUD and ENERGETIC using the user-provided music file (Google Drive link), extend intro to 20s, smoothly fade out the music, and play the full website intro during the music.
+
+Work Log:
+- Downloaded the user's music file from Google Drive (file id 15pkJ26wvf4BJKQGd1zjONIaB6oqfMxoz) → public/audio/intro-music.mp3 (3.4MB, 256 kbps, 44.1 kHz Joint Stereo MP3); file command confirmed valid MPEG layer III; served at HTTP 200.
+- logo-intro.tsx FULL music rewrite:
+  - Removed the in-browser Web Audio synthesis (oscillators/chords/arpeggio) entirely.
+  - startMusic() now: creates an HTMLAudioElement (new Audio("/audio/intro-music.mp3")), routes it through a Web Audio MediaElementSource → GainNode → destination so gain can be controlled smoothly.
+  - Gain envelope: fade IN to full (1.0 = loud) over 0.6s, hold, then smooth fade OUT over the last 2.5s down to 0.0001 (exponentialRampToValueAtTime) — music stops smoothly.
+  - audio.play() attempted on mount (autoplay policy); on first user gesture (pointerdown/keydown/touchstart/wheel) ctx.resume() + audio.play() resume — NO visible "tap" button (kept the transparent unlock listeners from before).
+  - Cleanup on intro exit/unmount: audio.pause(), audio.src="", ctx.close().
+- DURATION 15000 → 20000 (20s).
+- Re-timed the animation sequence to fill 20s: logo (0.2s) → underline (1.0s) → "What is Big My Business?" (2.2s) → subtitle (3.0s) → 4 benefit cards staggered (4.5s + i*1.4 = 4.5/5.9/7.3/8.7s) → tagline "Connect. Collaborate. Grow Big." (16s) → "Entering the experience" loader (17.5s) → reveal at 20s.
+- Progress bar now animates over 20s linear.
+
+Verification (Agent Browser):
+- Music file served: HTTP 200, 3.4MB ✓
+- No "Tap for sound" button (tapBtn: false) ✓
+- Intro plays 20s then reveals full homepage (captured at ~21s = "Grow Your Business Big" hero) ✓
+- No console errors during intro+audio, lint clean, HTTP 200
+
+Stage Summary:
+- Intro now 20 seconds, scored to the user's loud & energetic music track (Google Drive MP3), with smooth fade-in (0.6s to full) and smooth fade-out (last 2.5s) — music stops smoothly
+- Full intro story (logo → what is → 4 benefits → tagline → reveal) plays across the 20s
+- No visible "tap" button — audio autoplay-unlocks on the first natural user gesture
+- Website remains fully functional, lint clean, no errors

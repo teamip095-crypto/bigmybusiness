@@ -11,13 +11,13 @@ import {
 } from "lucide-react";
 
 /**
- * First-load intro (15s) on a LIGHT background so the black logo is visible.
- * Plays an animated story: logo → "what is Big My Business?" → 4 benefit
- * pillars → tagline → reveal homepage. Accompanied by a soft, uplifting
- * ambient melody synthesised in-browser via the Web Audio API (no audio
- * file needed). Runs once per browser session.
+ * First-load intro (20s) on a LIGHT background so the black logo is visible.
+ * Plays the full animated story (logo → what is → 4 benefit pillars → tagline
+ * → reveal) accompanied by a loud, energetic user-provided music track that
+ * fades in and out smoothly. Autoplay-unlocks on the first user gesture (no
+ * visible "tap" button). Runs once per browser session.
  */
-const DURATION = 15000;
+const DURATION = 20000;
 
 const BENEFITS = [
   { icon: Users, title: "Connect", desc: "Build your city chapter" },
@@ -26,9 +26,11 @@ const BENEFITS = [
   { icon: TrendingUp, title: "Grow Big", desc: "Real, referable revenue" },
 ];
 
-// Build a soft, uplifting 15-second ambient piece (I–V–vi–IV in C) with a
-// gentle pad + sparkle arpeggio. Returns the AudioContext so it can be closed.
-function startMusic(): AudioContext | null {
+// Play the user-provided loud, energetic intro music track via an <audio>
+// element routed through a Web Audio gain node (so we can fade in/out smoothly).
+// Returns handles so they can be stopped on intro exit.
+type MusicHandles = { audio: HTMLAudioElement; ctx: AudioContext } | null;
+function startMusic(): MusicHandles {
   const AC =
     typeof window !== "undefined"
       ? window.AudioContext ||
@@ -36,89 +38,47 @@ function startMusic(): AudioContext | null {
           .webkitAudioContext
       : undefined;
   if (!AC) return null;
+
+  const audio = new Audio("/audio/intro-music.mp3");
+  audio.preload = "auto";
+  audio.loop = false;
+  audio.crossOrigin = "anonymous";
+
   const ctx = new AC();
+  let gain: GainNode;
+  try {
+    const src = ctx.createMediaElementSource(audio);
+    gain = ctx.createGain();
+    gain.gain.value = 0.0001;
+    src.connect(gain);
+    gain.connect(ctx.destination);
+  } catch {
+    // fallback: play the element directly (no gain control)
+    gain = ctx.createGain();
+    gain.connect(ctx.destination);
+    audio.volume = 1;
+  }
 
-  const master = ctx.createGain();
-  master.gain.value = 0.0001;
-  master.connect(ctx.destination);
+  const DUR = 20; // seconds — matches DURATION
+  const t0 = ctx.currentTime + 0.08;
+  // fade IN quickly to full (loud), hold, then smooth fade OUT over the last 2.5s
+  gain.gain.cancelScheduledValues(t0);
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(1.0, t0 + 0.6); // loud
+  gain.gain.setValueAtTime(1.0, t0 + (DUR - 2.5));
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + DUR); // smooth stop
 
-  // warm low-pass
-  const filter = ctx.createBiquadFilter();
-  filter.type = "lowpass";
-  filter.frequency.value = 2400;
-  filter.Q.value = 0.4;
-  filter.connect(master);
-
-  // gentle feedback delay for space
-  const delay = ctx.createDelay();
-  delay.delayTime.value = 0.32;
-  const fb = ctx.createGain();
-  fb.gain.value = 0.28;
-  delay.connect(fb);
-  fb.connect(delay);
-  delay.connect(filter);
-
-  type Note = { f: number; s: number; d: number; p: number; t: OscillatorType };
-  const playNote = (n: Note) => {
-    const osc = ctx.createOscillator();
-    osc.type = n.t;
-    osc.frequency.value = n.f;
-    const g = ctx.createGain();
-    const start = ctx.currentTime + 0.1 + n.s;
-    g.gain.setValueAtTime(0.0001, start);
-    g.gain.exponentialRampToValueAtTime(n.p, start + 0.12);
-    g.gain.exponentialRampToValueAtTime(0.0001, start + n.d);
-    osc.connect(g);
-    g.connect(filter);
-    g.connect(delay);
-    osc.start(start);
-    osc.stop(start + n.d + 0.05);
-  };
-
-  const t0 = ctx.currentTime + 0.1;
-  // master fade in (1.5s) and fade out (last 2s)
-  master.gain.setValueAtTime(0.0001, t0);
-  master.gain.exponentialRampToValueAtTime(0.55, t0 + 1.5);
-  master.gain.setValueAtTime(0.55, t0 + 12.5);
-  master.gain.exponentialRampToValueAtTime(0.0001, t0 + 15);
-
-  // I–V–vi–IV chord progression, each ~3.75s (pads)
-  const chords: number[][] = [
-    [130.81, 196.0, 261.63, 329.63], // C  (C3 G3 C4 E4)
-    [196.0, 293.66, 392.0, 493.88], // G  (G3 D4 G4 B4)
-    [220.0, 261.63, 329.63, 440.0], // Am (A3 C4 E4 A4)
-    [174.61, 261.63, 349.23, 440.0], // F  (F3 C4 F4 A4)
-  ];
-  chords.forEach((notes, i) => {
-    const start = i * 3.75;
-    notes.forEach((f) =>
-      playNote({ f, s: start, d: 3.9, p: 0.1, t: "triangle" })
-    );
+  audio.currentTime = 0;
+  audio.play().catch(() => {
+    /* autoplay blocked — will resume on first user gesture */
   });
 
-  // sparkle arpeggio melody on top (sine, soft)
-  const melody: Note[] = [
-    { f: 523.25, s: 0.2, d: 0.9, p: 0.07, t: "sine" },
-    { f: 659.25, s: 1.1, d: 0.9, p: 0.07, t: "sine" },
-    { f: 783.99, s: 2.0, d: 1.1, p: 0.07, t: "sine" },
-    { f: 587.33, s: 3.95, d: 0.9, p: 0.07, t: "sine" },
-    { f: 783.99, s: 4.85, d: 0.9, p: 0.07, t: "sine" },
-    { f: 987.77, s: 5.75, d: 1.2, p: 0.07, t: "sine" },
-    { f: 523.25, s: 7.7, d: 0.9, p: 0.07, t: "sine" },
-    { f: 659.25, s: 8.6, d: 0.9, p: 0.07, t: "sine" },
-    { f: 880.0, s: 9.5, d: 1.3, p: 0.07, t: "sine" },
-    { f: 698.46, s: 11.45, d: 1.0, p: 0.07, t: "sine" },
-    { f: 880.0, s: 12.35, d: 1.0, p: 0.07, t: "sine" },
-    { f: 1046.5, s: 13.25, d: 1.6, p: 0.08, t: "sine" },
-  ];
-  melody.forEach(playNote);
-
-  return ctx;
+  return { audio, ctx };
 }
 
 export function LogoIntro() {
   const [show, setShow] = useState(false);
-  const ctxRef = useRef<AudioContext | null>(null);
+  const handlesRef = useRef<MusicHandles>(null);
 
   useEffect(() => {
     if (
@@ -136,14 +96,18 @@ export function LogoIntro() {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    // start music (will be suspended until first user gesture, per browser policy)
-    ctxRef.current = startMusic();
-    const ctx = ctxRef.current;
-    if (ctx) {
+    // start music (loud, energetic track; autoplay may be blocked until first gesture)
+    handlesRef.current = startMusic();
+    const h = handlesRef.current;
+    if (h) {
+      const { ctx, audio } = h;
       // Try to start immediately (some browsers allow it); otherwise resume on
       // the FIRST user gesture of any kind — no visible "tap" button needed.
       const tryResume = () => {
         ctx.resume().catch(() => {});
+        if (audio.paused) {
+          audio.play().catch(() => {});
+        }
       };
       tryResume();
       const unlock = () => {
@@ -167,14 +131,16 @@ export function LogoIntro() {
     return () => {
       window.clearTimeout(t);
       document.body.style.overflow = prev || "";
-      const c = ctxRef.current;
+      const c = handlesRef.current;
       if (c) {
         try {
-          c.close();
+          c.audio.pause();
+          c.audio.src = "";
+          c.ctx.close();
         } catch {
           // ignore
         }
-        ctxRef.current = null;
+        handlesRef.current = null;
       }
     };
   }, [show]);
@@ -220,7 +186,7 @@ export function LogoIntro() {
             <motion.div
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
-              transition={{ duration: 0.7, delay: 0.95, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.7, delay: 1.0, ease: [0.22, 1, 0.36, 1] }}
               className="mt-4 h-[3px] w-44 sm:w-56 bg-brand-red rounded-full origin-center"
             />
 
@@ -228,7 +194,7 @@ export function LogoIntro() {
             <motion.h2
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.6 }}
+              transition={{ duration: 0.6, delay: 2.2 }}
               className="mt-6 font-serif-display text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground"
             >
               What is{" "}
@@ -237,17 +203,17 @@ export function LogoIntro() {
             <motion.p
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 2.2 }}
+              transition={{ duration: 0.6, delay: 3.0 }}
               className="mt-2 text-sm sm:text-base text-muted-foreground max-w-md"
             >
               India&rsquo;s fastest-growing business networking community — helping
               entrepreneurs connect, collaborate and grow.
             </motion.p>
 
-            {/* Phase 3 — benefits (staggered, slower for 15s) */}
+            {/* Phase 3 — benefits (staggered across the 20s intro) */}
             <div className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl">
               {BENEFITS.map((b, i) => {
-                const delay = 3.2 + i * 1.0;
+                const delay = 4.5 + i * 1.4;
                 return (
                   <motion.div
                     key={b.title}
@@ -279,7 +245,7 @@ export function LogoIntro() {
             <motion.p
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 11 }}
+              transition={{ duration: 0.6, delay: 16 }}
               className="mt-7 font-script text-brand-red text-xl sm:text-2xl"
             >
               Connect. Collaborate. Grow Big.
@@ -287,7 +253,7 @@ export function LogoIntro() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 12 }}
+              transition={{ delay: 17.5 }}
               className="mt-3 flex items-center gap-1.5"
             >
               <motion.span
@@ -301,7 +267,7 @@ export function LogoIntro() {
             </motion.div>
           </div>
 
-          {/* 15s progress bar */}
+          {/* 20s progress bar */}
           <motion.div
             initial={{ width: "0%" }}
             animate={{ width: "100%" }}
