@@ -17,6 +17,7 @@ import { Footer } from "@/components/site/footer";
 import { LogoIntro } from "@/components/site/logo-intro";
 import { ScrollProgress } from "@/components/site/scroll-progress";
 import { SITE } from "@/lib/site-data";
+import { AdminPanel } from "@/components/admin/admin-panel";
 
 export default function Home() {
   return (
@@ -38,6 +39,8 @@ export default function Home() {
       </main>
       <Footer />
       <FloatingActions />
+      {/* Admin overlay — activates on #admin hash */}
+      <AdminPanel />
     </div>
   );
 }

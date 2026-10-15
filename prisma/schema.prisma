@@ -41,3 +41,49 @@ model ContactEnquiry {
   message   String
   createdAt DateTime @default(now())
 }
+
+// ---------- Admin Panel ----------
+model AdminUser {
+  id             String   @id @default(cuid())
+  username       String   @unique
+  passwordHash   String
+  whatsappNumber String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model AdminMember {
+  id            String   @id @default(cuid())
+  name          String
+  phone         String
+  email         String?
+  city          String?
+  membershipPlan String   // "Prime" | "Privilege" | "Franchise"
+  amount        Float
+  paymentStatus String   // "Paid" | "Pending"
+  notes         String?
+  joinedAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model AdminEvent {
+  id        String   @id @default(cuid())
+  title     String
+  type      String   // "Physical" | "Online"
+  location  String
+  time      String
+  desc      String
+  image     String?
+  status    String   // "Upcoming" | "Completed"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  adminId   String
+  code      String   // 6-digit string
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
