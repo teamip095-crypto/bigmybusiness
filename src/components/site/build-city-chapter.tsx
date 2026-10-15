@@ -143,23 +143,31 @@ function BuildCityChapterDialog({
     return `https://wa.me/91${phone}?text=${text}`;
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.phone || !form.city) {
       toast.error("Please fill your name, phone and city.");
       return;
     }
     setLoading(true);
-    // Simulate brief processing then reveal WhatsApp options
-    setTimeout(() => {
-      setSubmitted(form);
-      setLoading(false);
-      setDone(true);
-      setForm(EMPTY);
-      toast.success("Ready!", {
-        description: "Pick a number to start your city chapter on WhatsApp.",
+    // Store the request to the admin DB (so it appears in the admin member
+    // list / Excel export) — fire-and-forget; WhatsApp is the user channel.
+    try {
+      await fetch("/api/build-chapter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
       });
-    }, 600);
+    } catch {
+      // non-fatal — WhatsApp is still the primary channel
+    }
+    setSubmitted(form);
+    setLoading(false);
+    setDone(true);
+    setForm(EMPTY);
+    toast.success("Request received!", {
+      description: "Pick a number to start your city chapter on WhatsApp.",
+    });
   };
 
   const reset = () => {

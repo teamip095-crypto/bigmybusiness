@@ -30,6 +30,41 @@ export async function POST(req: NextRequest) {
       data: { name, email, phone, city, interest, message },
     });
 
+    // Also push every joiner into the admin member list so the admin can see
+    // everyone who enquired and export them to Excel. The admin confirms the
+    // membership plan/amount/status later.
+    const planMap: Record<string, string> = {
+      prime: "Prime",
+      privilege: "Privilege",
+      franchise: "Franchise",
+    };
+    const plan =
+      interest && planMap[interest] ? planMap[interest] : "Lead";
+    const notesParts = [
+      "Website enquiry",
+      interest ? `Interested in: ${interest}` : "",
+      message ? `Message: ${message}` : "",
+    ].filter(Boolean);
+
+    try {
+      await db.adminMember.create({
+        data: {
+          name,
+          phone,
+          email,
+          city,
+          membershipPlan: plan,
+          amount: 0,
+          paymentStatus: "Pending",
+          notes: notesParts.join(" — "),
+        },
+      });
+    } catch (e) {
+      // Don't fail the public form if the admin-row insert fails; the enquiry
+      // itself was already saved.
+      console.error("[contact] admin-member sync failed:", e);
+    }
+
     return NextResponse.json({
       ok: true,
       id: enquiry.id,

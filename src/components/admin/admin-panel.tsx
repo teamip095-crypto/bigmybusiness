@@ -24,6 +24,7 @@ import {
   ArrowLeft,
   Phone,
   X,
+  Download,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -822,6 +823,39 @@ function MembersTab() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/admin/members/export", {
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Export failed");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const d = new Date();
+      const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(d.getDate()).padStart(2, "0")}`;
+      a.download = `big-my-business-members-${stamp}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Excel downloaded.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export failed.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -945,15 +979,30 @@ function MembersTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setDialogOpen(true);
-          }}
-          className="bg-brand-red hover:bg-brand-red/90"
-        >
-          <Plus className="h-4 w-4" /> Add member
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={exportExcel}
+            disabled={exporting || members.length === 0}
+            className="border-black/15 hover:border-brand-red hover:text-brand-red bg-white"
+          >
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">Excel</span>
+          </Button>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setDialogOpen(true);
+            }}
+            className="bg-brand-red hover:bg-brand-red/90"
+          >
+            <Plus className="h-4 w-4" /> Add member
+          </Button>
+        </div>
       </div>
 
       {/* Table */}
