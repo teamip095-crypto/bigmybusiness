@@ -25,6 +25,7 @@ import {
   Phone,
   X,
   Download,
+  FileText,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -857,6 +858,47 @@ function MembersTab() {
     }
   };
 
+  const downloadInvoice = async (m: Member) => {
+    try {
+      const res = await fetch(`/api/admin/members/${m.id}/invoice`, {
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Could not generate invoice");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `BMB-invoice-${m.name.replace(/\s+/g, "-")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Invoice downloaded.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Invoice failed.");
+    }
+  };
+
+  const sendInvoiceWhatsApp = async (m: Member) => {
+    try {
+      const res = await fetch(
+        `/api/admin/members/${m.id}/invoice?link=1`,
+        { cache: "no-store" }
+      );
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Could not build invoice link");
+      }
+      window.open(data.waLink, "_blank", "noopener,noreferrer");
+      toast.success("WhatsApp opened with invoice link.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not send invoice.");
+    }
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -1094,6 +1136,26 @@ function MembersTab() {
                         })}
                       </TableCell>
                       <TableCell className="text-right whitespace-nowrap">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => void downloadInvoice(m)}
+                          aria-label="Download invoice"
+                          title="Download invoice PDF"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-[#25D366] hover:text-[#25D366]"
+                          onClick={() => void sendInvoiceWhatsApp(m)}
+                          aria-label="Send invoice on WhatsApp"
+                          title="Send invoice on WhatsApp"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
                         <Button
                           size="icon"
                           variant="ghost"

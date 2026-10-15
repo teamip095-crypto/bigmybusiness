@@ -60,6 +60,17 @@ export const SITE = {
     youtube: "#",
     whatsapp: "https://wa.me/919424242043",
   },
+  // UPI payment collection (membership fees). The QR encodes a UPI deep link
+  // so members scan & pay into this account.
+  upi: {
+    vpa: "9301056006@upi", // payment VPA (Raipur office number)
+    payeeName: "Big My Business",
+    // Plans with their amounts (kept in sync with MEMBERSHIP_PLANS)
+    plans: {
+      Prime: { amount: 9999, period: "Life Membership" },
+      Privilege: { amount: 5999, period: "Annual Membership" },
+    } as Record<string, { amount: number; period: string }>,
+  },
 };
 
 export type NavItem = {

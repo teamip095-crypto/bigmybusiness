@@ -109,3 +109,43 @@ export function clearSessionCookie(res: NextResponse) {
 }
 
 export const ADMIN_COOKIE_NAME = COOKIE_NAME;
+
+// ---- Invoice share tokens ----
+// A signed, public, no-admin-auth token so a member can view their own invoice
+// PDF via /api/invoice/[token]. token = memberId.HMAC (different secret scope).
+
+async function hmacScope(scope: string, id: string): Promise<string> {
+  const key = new TextEncoder().encode(getSecret() + ":" + scope);
+  const data = new TextEncoder().encode(id);
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    key,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, data);
+  return Buffer.from(new Uint8Array(sig))
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+/** Build a signed public invoice token for a member id. */
+export async function signInvoiceToken(memberId: string): Promise<string> {
+  const sig = await hmacScope("invoice", memberId);
+  return `${memberId}.${sig}`;
+}
+
+/** Verify a signed invoice token, returning the member id or null. */
+export async function verifyInvoiceToken(token: string): Promise<string | null> {
+  if (!token) return null;
+  const sep = token.lastIndexOf(".");
+  if (sep <= 0 || sep === token.length - 1) return null;
+  const memberId = token.slice(0, sep);
+  const sig = token.slice(sep + 1);
+  const expected = await hmacScope("invoice", memberId);
+  if (!safeEqual(sig, expected)) return null;
+  return memberId;
+}

@@ -727,3 +727,31 @@ Stage Summary:
 - Excel export: styled .xlsx (brand-red header, frozen, filter, zebra, ₹ format, color status, totals row) — button in admin Members tab.
 - Admin panel 100% functioning: register/login/logout/forgot(WhatsApp)/reset/change-password/members CRUD/events CRUD/upload/Excel export — all verified end-to-end, all protected routes return 401 without auth.
 - Admin data cleared for fresh start (user re-registers their own admin). Website fully functional, lint clean, HTTP 200.
+
+---
+Task ID: INVOICE-QR-PAYMENT
+Agent: Main Orchestrator
+Task: Membership payment via QR scan to 9301056006 + invoice sent to member's WhatsApp + revenue/member detail clearly in admin (Excel download).
+
+Work Log:
+- Installed `pdfkit` + `qrcode` (+ types) for server-side invoice PDF + UPI QR generation.
+- SITE.upi config added: vpa "9301056006@upi", payeeName "Big My Business", plans { Prime: 9999/Life, Privilege: 5999/Annual }.
+- src/lib/invoice.ts: generateInvoicePdf(member) builds a styled A4 PDF — brand-red bar, "Big My Business" + "TAX INVOICE" header, invoice no (BMB-YYYY-XXXXXX), date, status, "BILL TO" (name/phone/email/city/plan), line-item table (plan + amount), TOTAL PAYABLE (₹), a UPI QR (encodes upi://pay?pa=9301056006@upi&pn=BigMyBusiness&am=<amount>&cu=INR&tn=...) + payee/VPA/amount/steps, notes, footer (both office addresses + phones + email + "computer-generated").
+- invoice token helpers in admin-auth.ts: signInvoiceToken(memberId)/verifyInvoiceToken(token) — HMAC-scoped ("invoice") so a member can view their own invoice via a public link without admin auth.
+- /api/admin/members/[id]/invoice (auth): GET → PDF download; GET ?link=1 → {token, invoiceUrl (public), waLink, invNo}. The waLink = wa.me/91<member_phone>?text=<summary + invoiceUrl>.
+- /api/invoice/[token] (public, signed): GET → invoice PDF (member opens from the WhatsApp message).
+- Admin UI (Members tab): added two action buttons per row — "Download invoice" (FileText icon → PDF) and "Send invoice on WhatsApp" (green MessageCircle → opens waLink with invoice summary + public download URL). Plus the existing Excel download button.
+
+Verification (curl + Agent Browser + VLM):
+- Register → add member (Invoice Test, Prime, ₹9,999, Paid) → invoice PDF download: HTTP 200, valid PDF (1 page) ✓
+- Invoice ?link=1 → invNo "BMB-2026-LRK1CQ", waLink to 919555555555 with summary + public invoiceUrl, token generated ✓
+- Public /api/invoice/[token] (no auth) → HTTP 200, valid PDF ✓
+- VLM on the PDF: "Big My Business header, TAX INVOICE, member Invoice Test, Prime (Life Membership), ₹9,999, QR code for UPI payment visible" ✓
+- Admin UI: invoice + WhatsApp action buttons present per member row (next to edit/delete) ✓
+- All admin data cleared for fresh start (exists: false); lint clean; HTTP 200
+
+Stage Summary:
+- Membership payment: invoice PDF contains a UPI QR (to 9301056006@upi) the member scans to pay the plan amount.
+- Invoice to WhatsApp: admin clicks the WhatsApp icon → opens wa.me to the member's phone with invoice no/name/plan/amount/status + a public link to view/download the PDF (which has the QR). Member opens link, scans QR, pays.
+- Revenue + member detail: already in admin Members tab (totalCollected, per-member plan/amount/status) + Excel export (styled .xlsx with totals). All flows (contact form, build-chapter form) push into the member list.
+- Admin data cleared for fresh start. Website fully functional, lint clean, HTTP 200.
