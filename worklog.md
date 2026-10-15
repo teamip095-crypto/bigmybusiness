@@ -671,3 +671,22 @@ Stage Summary:
 - Password reset via WhatsApp: forgot → wa.me self-message link with code → admin receives in WhatsApp → enters code + new password.
 - Members CRUD (name/phone/email/city/plan/amount/status/notes), Events CRUD, Photo upload, Settings (change password) — all working with auth.
 - DB cleared for fresh start. Website fully functional, lint clean, no errors.
+
+---
+Task ID: ADMIN-BUTTON
+Agent: Main Orchestrator
+Task: Add an Admin button in the footer (it wasn't visible — admin panel was only reachable via #admin hash).
+
+Work Log:
+- footer.tsx bottom bar: added a subtle but visible "Admin" button (ShieldCheck icon + "Admin" text) styled as a pill (border-white/15, bg-white/5, hover→bg-brand-red). Placed in the bottom bar next to the copyright and "Crafted with passion" text.
+- onClick: sets `window.location.hash = "admin"` → triggers the AdminPanel overlay (which activates on #admin).
+- Added ShieldCheck to the lucide-react imports.
+
+Verification (Agent Browser):
+- DOM: footer has the "Admin" button (text "Admin" + shield svg) ✓
+- Click Admin button → location.hash becomes "#admin" → admin overlay opens (login/register screen) ✓
+- VLM confirmed "admin panel is open and displaying the login screen" ✓
+- No console errors, lint clean, HTTP 200
+
+Stage Summary:
+- Admin panel is now discoverable via the "Admin" button in the footer bottom bar — clicking it opens the #admin overlay (register/login). No console errors, lint clean.

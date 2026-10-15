@@ -12,6 +12,7 @@ import {
   Youtube,
   ArrowRight,
   Send,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -190,10 +191,19 @@ export function Footer() {
             <p>
               &copy; {new Date().getFullYear()} {SITE.brand}. All rights reserved.
             </p>
-            <p className="flex items-center gap-1.5">
-              Crafted with passion in
-              <span className="text-brand-red font-semibold">Bhilai, Chhattisgarh</span>
-            </p>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => { window.location.hash = "admin"; }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/70 hover:bg-brand-red hover:border-brand-red hover:text-white transition-all"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Admin
+              </button>
+              <p className="flex items-center gap-1.5">
+                Crafted with passion in
+                <span className="text-brand-red font-semibold">Bhilai, Chhattisgarh</span>
+              </p>
+            </div>
           </div>
         </div>
       </div>
