@@ -17,7 +17,11 @@ const COOKIE_NAME = "bmb_admin";
 const DEV_SECRET = "bmb-admin-dev-secret-do-not-use-in-prod-please";
 
 function getSecret(): string {
-  return process.env.ADMIN_SESSION_SECRET || DEV_SECRET;
+  const s = process.env.ADMIN_SESSION_SECRET;
+  if (!s && process.env.NODE_ENV === "production") {
+    throw new Error("ADMIN_SESSION_SECRET must be set in production.");
+  }
+  return s || DEV_SECRET;
 }
 
 /** Constant-time-ish string compare (resists timing attacks). */

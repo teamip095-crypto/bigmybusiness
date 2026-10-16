@@ -18,6 +18,7 @@ import { LogoIntro } from "@/components/site/logo-intro";
 import { ScrollProgress } from "@/components/site/scroll-progress";
 import { SITE } from "@/lib/site-data";
 import { AdminPanel } from "@/components/admin/admin-panel";
+import { LiveCountPill } from "@/components/site/live-count-pill";
 
 export default function Home() {
   return (
@@ -39,6 +40,8 @@ export default function Home() {
       </main>
       <Footer />
       <FloatingActions />
+      {/* Live visitors pill — bottom-right, reads socket.io stream from live-count mini-service */}
+      <LiveCountPill />
       {/* Admin overlay — activates on #admin hash */}
       <AdminPanel />
     </div>

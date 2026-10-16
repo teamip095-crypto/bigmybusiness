@@ -5,7 +5,8 @@ import { verifySession } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/admin/members/export → downloads all members as a styled .xlsx
+// GET /api/admin/members/export → downloads members as a styled .xlsx
+// Optional filters: ?plan=Prime|Privilege|Lead|Franchise, ?chapter=<city>
 export async function GET(req: NextRequest) {
   const adminId = await verifySession(req);
   if (!adminId) {
@@ -15,7 +16,24 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const url = new URL(req.url);
+  const plan = url.searchParams.get("plan") || "";
+  const chapter = url.searchParams.get("chapter") || "";
+
+  // Build where clause from plan + chapter filters
+  const where: Record<string, unknown> = {};
+  if (plan) where.membershipPlan = plan;
+  if (chapter) {
+    // chapter is stored inside the notes ("Chapter: X") or the city field
+    where.OR = [
+      { city: { contains: chapter, mode: "insensitive" } },
+      { notes: { contains: `Chapter: ${chapter}`, mode: "insensitive" } },
+      { notes: { contains: chapter, mode: "insensitive" } },
+    ];
+  }
+
   const members = await db.adminMember.findMany({
+    where,
     orderBy: { joinedAt: "desc" },
   });
 
@@ -27,7 +45,12 @@ export async function GET(req: NextRequest) {
   wb.creator = "Big My Business Admin";
   wb.created = new Date();
 
-  const ws = wb.addWorksheet("Members", {
+  const sheetName = [plan || "All", chapter ? `Chapter: ${chapter}` : ""]
+    .filter(Boolean)
+    .join(" — ")
+    .slice(0, 31); // Excel sheet name max 31 chars
+
+  const ws = wb.addWorksheet(sheetName || "Members", {
     views: [{ state: "frozen", ySplit: 1, xSplit: 0 }],
   });
 
@@ -147,12 +170,15 @@ export async function GET(req: NextRequest) {
   const buffer = await wb.xlsx.writeBuffer();
 
   const stamp = new Date().toISOString().slice(0, 10);
+  const fileTag = [plan || "all", chapter ? chapter.toLowerCase().replace(/\s+/g, "-") : null]
+    .filter(Boolean)
+    .join("-by-");
   return new NextResponse(buffer, {
     status: 200,
     headers: {
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="big-my-business-members-${stamp}.xlsx"`,
+      "Content-Disposition": `attachment; filename="bmb-members-${fileTag}-${stamp}.xlsx"`,
       "Cache-Control": "no-store",
     },
   });

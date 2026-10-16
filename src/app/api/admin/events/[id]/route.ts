@@ -37,6 +37,32 @@ export async function PUT(
         : undefined;
     const status = body.status !== undefined ? String(body.status) : undefined;
 
+    // New meeting / recording fields. "" -> null (clear), missing -> undefined (no change).
+    const meetLink =
+      body.meetLink !== undefined
+        ? body.meetLink === null || body.meetLink === ""
+          ? null
+          : String(body.meetLink).trim()
+        : undefined;
+    const meetingDate =
+      body.meetingDate !== undefined
+        ? body.meetingDate === null || body.meetingDate === ""
+          ? null
+          : String(body.meetingDate).trim()
+        : undefined;
+    const recordingUrl =
+      body.recordingUrl !== undefined
+        ? body.recordingUrl === null || body.recordingUrl === ""
+          ? null
+          : String(body.recordingUrl).trim()
+        : undefined;
+    const recordingTitle =
+      body.recordingTitle !== undefined
+        ? body.recordingTitle === null || body.recordingTitle === ""
+          ? null
+          : String(body.recordingTitle).trim()
+        : undefined;
+
     if (title !== undefined && title === "") {
       return NextResponse.json({ ok: false, error: "Title cannot be empty." }, { status: 400 });
     }
@@ -61,6 +87,10 @@ export async function PUT(
     if (desc !== undefined) data.desc = desc;
     if (image !== undefined) data.image = image;
     if (status !== undefined) data.status = status;
+    if (meetLink !== undefined) data.meetLink = meetLink;
+    if (meetingDate !== undefined) data.meetingDate = meetingDate;
+    if (recordingUrl !== undefined) data.recordingUrl = recordingUrl;
+    if (recordingTitle !== undefined) data.recordingTitle = recordingTitle;
 
     const event = await db.adminEvent.update({ where: { id }, data });
     return NextResponse.json({ ok: true, event });

@@ -1,0 +1,18 @@
+{
+  "name": "live-count-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Real-time live visitors counter for Big My Business (socket.io mini-service)",
+  "scripts": {
+    "dev": "bun --hot index.ts",
+    "start": "bun index.ts"
+  },
+  "dependencies": {
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "bun-types": "^1.3.4"
+  }
+}

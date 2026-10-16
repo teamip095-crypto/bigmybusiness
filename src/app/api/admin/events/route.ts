@@ -34,6 +34,30 @@ export async function POST(req: NextRequest) {
     const image = body.image ? String(body.image).trim() : null;
     const status = String(body.status || "Upcoming");
 
+    // New meeting / recording fields (optional). Strings trimmed; empty -> null.
+    const meetLink =
+      body.meetLink !== undefined && body.meetLink !== null && body.meetLink !== ""
+        ? String(body.meetLink).trim()
+        : null;
+    const meetingDate =
+      body.meetingDate !== undefined &&
+      body.meetingDate !== null &&
+      body.meetingDate !== ""
+        ? String(body.meetingDate).trim()
+        : null;
+    const recordingUrl =
+      body.recordingUrl !== undefined &&
+      body.recordingUrl !== null &&
+      body.recordingUrl !== ""
+        ? String(body.recordingUrl).trim()
+        : null;
+    const recordingTitle =
+      body.recordingTitle !== undefined &&
+      body.recordingTitle !== null &&
+      body.recordingTitle !== ""
+        ? String(body.recordingTitle).trim()
+        : null;
+
     if (!title || !location || !time) {
       return NextResponse.json(
         { ok: false, error: "Title, location and time are required." },
@@ -54,7 +78,19 @@ export async function POST(req: NextRequest) {
     }
 
     const event = await db.adminEvent.create({
-      data: { title, type, location, time, desc, image, status },
+      data: {
+        title,
+        type,
+        location,
+        time,
+        desc,
+        image,
+        status,
+        meetLink,
+        meetingDate,
+        recordingUrl,
+        recordingTitle,
+      },
     });
     return NextResponse.json({ ok: true, event }, { status: 201 });
   } catch (e) {

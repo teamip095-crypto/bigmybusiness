@@ -67,16 +67,20 @@ model AdminMember {
 }
 
 model AdminEvent {
-  id        String   @id @default(cuid())
-  title     String
-  type      String   // "Physical" | "Online"
-  location  String
-  time      String
-  desc      String
-  image     String?
-  status    String   // "Upcoming" | "Completed"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  title           String
+  type            String   // "Physical" | "Online"
+  location        String
+  time            String
+  desc            String
+  image           String?
+  status          String   // "Upcoming" | "Completed"
+  meetLink        String?  // Google Meet / Zoom link for online meetings
+  meetingDate     String?  // human-readable date (e.g. "12 Oct 2025")
+  recordingUrl    String?  // recording file URL or external link
+  recordingTitle  String?  // title for the recording
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model PasswordReset {
@@ -86,4 +90,15 @@ model PasswordReset {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+// ---------- CMS: admin-editable site content ----------
+// Stored as JSON blobs keyed by name (e.g. "membershipPlans", "faq",
+// "about", "hero", "events", "awards", "blog", "testimonials"). The public
+// site reads these (falling back to the static defaults in site-data.ts).
+model SiteContent {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   // JSON-serialised content
+  updatedAt DateTime @updatedAt
 }

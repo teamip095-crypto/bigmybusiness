@@ -26,6 +26,16 @@ import {
   X,
   Download,
   FileText,
+  Video,
+  CalendarClock,
+  Braces,
+  PlusCircle,
+  MinusCircle,
+  Save,
+  PencilLine,
+  HelpCircle,
+  FileEdit,
+  BadgePercent,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -65,6 +75,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { LiveCountWidget } from "@/components/admin/live-count-widget";
 
 // -----------------------------------------------------------------------------
 // Types
@@ -99,6 +110,10 @@ type AdminEventItem = {
   desc: string;
   image: string | null;
   status: string;
+  meetLink?: string | null;
+  meetingDate?: string | null;
+  recordingUrl?: string | null;
+  recordingTitle?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -697,7 +712,7 @@ function Dashboard({
   onLogout: () => void;
 }) {
   const [tab, setTab] = useState<
-    "members" | "events" | "upload" | "settings"
+    "members" | "events" | "upload" | "content" | "settings"
   >("members");
 
   return (
@@ -771,6 +786,13 @@ function Dashboard({
                 <span className="hidden sm:inline">Upload</span>
               </TabsTrigger>
               <TabsTrigger
+                value="content"
+                className="data-[state=active]:bg-brand-red data-[state=active]:text-white text-white/80"
+              >
+                <FileEdit className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Content</span>
+              </TabsTrigger>
+              <TabsTrigger
                 value="settings"
                 className="data-[state=active]:bg-brand-red data-[state=active]:text-white text-white/80"
               >
@@ -783,6 +805,11 @@ function Dashboard({
       </header>
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
+        {/* Live visitor count widget — real-time, top of dashboard */}
+        <div className="mb-6">
+          <LiveCountWidget />
+        </div>
+
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsContent value="members" className="mt-0 focus-visible:outline-none">
             <MembersTab />
@@ -792,6 +819,9 @@ function Dashboard({
           </TabsContent>
           <TabsContent value="upload" className="mt-0 focus-visible:outline-none">
             <UploadTab />
+          </TabsContent>
+          <TabsContent value="content" className="mt-0 focus-visible:outline-none">
+            <ContentTab />
           </TabsContent>
           <TabsContent value="settings" className="mt-0 focus-visible:outline-none">
             <SettingsTab admin={admin} />
@@ -813,8 +843,37 @@ function Dashboard({
 // Members tab
 // ----------------------------------------------------------------------------
 
-const PLAN_OPTIONS = ["Prime", "Privilege", "Franchise"] as const;
+const PLAN_OPTIONS = ["Prime", "Privilege", "Franchise", "Lead"] as const;
 const STATUS_OPTIONS = ["Paid", "Pending"] as const;
+const CHAPTER_OPTIONS = [
+  "Bhilai",
+  "Raipur",
+  "Durg",
+  "Bilaspur",
+  "Korba",
+  "Other",
+] as const;
+
+/** Try to extract the chapter from a member's city / notes. */
+function memberChapter(m: Member): string {
+  const city = (m.city || "").trim();
+  const notes = (m.notes || "").trim();
+  // 1. Explicit "Chapter: X" tag in notes
+  const m1 = notes.match(/Chapter:\s*([A-Za-z][A-Za-z\- ]+)/);
+  if (m1) {
+    const v = m1[1].trim().split(/\s+/)[0];
+    const cap = v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
+    return cap;
+  }
+  // 2. City field exact-ish match
+  if (city) {
+    const c = city.toLowerCase();
+    for (const opt of CHAPTER_OPTIONS) {
+      if (c === opt.toLowerCase() || c.includes(opt.toLowerCase())) return opt;
+    }
+  }
+  return "";
+}
 
 function MembersTab() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -822,6 +881,7 @@ function MembersTab() {
   const [query, setQuery] = useState("");
   const [planFilter, setPlanFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [chapterFilter, setChapterFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -829,27 +889,40 @@ function MembersTab() {
   const exportExcel = async () => {
     setExporting(true);
     try {
-      const res = await fetch("/api/admin/members/export", {
-        cache: "no-store",
-      });
+      const params = new URLSearchParams();
+      if (planFilter !== "all") params.set("plan", planFilter);
+      if (chapterFilter !== "all") params.set("chapter", chapterFilter);
+      const qs = params.toString();
+      const url = `/api/admin/members/export${qs ? "?" + qs : ""}`;
+      const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Export failed");
       }
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const urlObj = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
+      a.href = urlObj;
       const d = new Date();
       const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
         2,
         "0"
       )}-${String(d.getDate()).padStart(2, "0")}`;
-      a.download = `big-my-business-members-${stamp}.xlsx`;
+      const tag = [
+        planFilter !== "all" ? planFilter.toLowerCase() : null,
+        chapterFilter !== "all" ? chapterFilter.toLowerCase() : null,
+      ]
+        .filter(Boolean)
+        .join("-");
+      a.download = `bmb-members-${tag || "all"}-${stamp}.xlsx`;
+      // Override with the filename the server suggested (reflects server tag too).
+      const cd = res.headers.get("Content-Disposition") || "";
+      const m = cd.match(/filename="?([^";]+)"?/);
+      if (m) a.download = m[1];
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(urlObj);
       toast.success("Excel downloaded.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Export failed.");
@@ -933,6 +1006,16 @@ function MembersTab() {
     if (planFilter !== "all" && m.membershipPlan !== planFilter) return false;
     if (statusFilter !== "all" && m.paymentStatus !== statusFilter)
       return false;
+    if (chapterFilter !== "all") {
+      const ch = memberChapter(m);
+      if (chapterFilter === "Other") {
+        // "Other" = members whose chapter doesn't match the named chapters
+        const named = CHAPTER_OPTIONS.filter((c) => c !== "Other");
+        if (named.some((c) => ch === c)) return false;
+      } else if (ch !== chapterFilter) {
+        return false;
+      }
+    }
     return true;
   });
 
@@ -984,8 +1067,8 @@ function MembersTab() {
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
+          <div className="relative flex-1 max-w-md min-w-[200px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={query}
@@ -1020,6 +1103,19 @@ function MembersTab() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={chapterFilter} onValueChange={setChapterFilter}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Chapter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All chapters</SelectItem>
+              {CHAPTER_OPTIONS.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex gap-2">
           <Button
@@ -1027,6 +1123,7 @@ function MembersTab() {
             onClick={exportExcel}
             disabled={exporting || members.length === 0}
             className="border-black/15 hover:border-brand-red hover:text-brand-red bg-white"
+            title="Export the FILTERED set to Excel"
           >
             {exporting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -1057,6 +1154,7 @@ function MembersTab() {
                   <TableHead className="min-w-[160px]">Name</TableHead>
                   <TableHead className="min-w-[140px]">Phone</TableHead>
                   <TableHead className="min-w-[120px]">City</TableHead>
+                  <TableHead className="min-w-[110px]">Chapter</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Status</TableHead>
@@ -1068,7 +1166,7 @@ function MembersTab() {
                 {loading ? (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={9}
                       className="text-center text-muted-foreground py-10"
                     >
                       <Loader2 className="h-5 w-5 animate-spin inline-block" />{" "}
@@ -1078,7 +1176,7 @@ function MembersTab() {
                 ) : filtered.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={9}
                       className="text-center text-muted-foreground py-10"
                     >
                       No members found. Click &ldquo;Add member&rdquo; to create
@@ -1086,100 +1184,112 @@ function MembersTab() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell className="font-medium">
-                        {m.name}
-                        {m.email ? (
-                          <div className="text-[11px] text-muted-foreground">
-                            {m.email}
-                          </div>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {m.phone}
-                      </TableCell>
-                      <TableCell>{m.city || "—"}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={
-                            m.membershipPlan === "Prime"
-                              ? "border-brand-red text-brand-red"
-                              : m.membershipPlan === "Privilege"
-                              ? "border-brand-black text-brand-black"
-                              : "border-muted-foreground text-muted-foreground"
-                          }
-                        >
-                          {m.membershipPlan}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        ₹{Number(m.amount || 0).toLocaleString("en-IN")}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            m.paymentStatus === "Paid"
-                              ? "bg-emerald-600 hover:bg-emerald-600"
-                              : "bg-amber-500 hover:bg-amber-500"
-                          }
-                        >
-                          {m.paymentStatus}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(m.joinedAt).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => void downloadInvoice(m)}
-                          aria-label="Download invoice"
-                          title="Download invoice PDF"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-[#25D366] hover:text-[#25D366]"
-                          onClick={() => void sendInvoiceWhatsApp(m)}
-                          aria-label="Send invoice on WhatsApp"
-                          title="Send invoice on WhatsApp"
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => {
-                            setEditing(m);
-                            setDialogOpen(true);
-                          }}
-                          aria-label="Edit member"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-brand-red"
-                          onClick={() => void remove(m)}
-                          aria-label="Delete member"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  filtered.map((m) => {
+                    const ch = memberChapter(m);
+                    return (
+                      <TableRow key={m.id}>
+                        <TableCell className="font-medium">
+                          {m.name}
+                          {m.email ? (
+                            <div className="text-[11px] text-muted-foreground">
+                              {m.email}
+                            </div>
+                          ) : null}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {m.phone}
+                        </TableCell>
+                        <TableCell>{m.city || "—"}</TableCell>
+                        <TableCell>
+                          {ch ? (
+                            <Badge variant="outline" className="border-brand-black/30 text-brand-black">
+                              {ch}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={
+                              m.membershipPlan === "Prime"
+                                ? "border-brand-red text-brand-red"
+                                : m.membershipPlan === "Privilege"
+                                ? "border-brand-black text-brand-black"
+                                : "border-muted-foreground text-muted-foreground"
+                            }
+                          >
+                            {m.membershipPlan}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          ₹{Number(m.amount || 0).toLocaleString("en-IN")}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={
+                              m.paymentStatus === "Paid"
+                                ? "bg-emerald-600 hover:bg-emerald-600"
+                                : "bg-amber-500 hover:bg-amber-500"
+                            }
+                          >
+                            {m.paymentStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(m.joinedAt).toLocaleDateString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => void downloadInvoice(m)}
+                            aria-label="Download invoice"
+                            title="Download invoice PDF"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-[#25D366] hover:text-[#25D366]"
+                            onClick={() => void sendInvoiceWhatsApp(m)}
+                            aria-label="Send invoice on WhatsApp"
+                            title="Send invoice on WhatsApp"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              setEditing(m);
+                              setDialogOpen(true);
+                            }}
+                            aria-label="Edit member"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-brand-red"
+                            onClick={() => void remove(m)}
+                            aria-label="Delete member"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -1492,6 +1602,7 @@ function EventsTab() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AdminEventItem | null>(null);
+  const [shareOpen, setShareOpen] = useState<AdminEventItem | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1532,6 +1643,17 @@ function EventsTab() {
     }
   }
 
+  async function copyMeetLink(ev: AdminEventItem) {
+    const link = ev.meetLink;
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("Meet link copied to clipboard.");
+    } catch {
+      toast.error("Couldn't copy — select and copy manually.");
+    }
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
@@ -1567,78 +1689,175 @@ function EventsTab() {
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {events.map((ev) => (
-            <Card
-              key={ev.id}
-              className="overflow-hidden border-border/70 flex flex-col"
-            >
-              <div className="aspect-video bg-muted relative">
-                {ev.image ? (
-                  <img
-                    src={ev.image}
-                    alt={ev.title}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="h-full w-full grid place-items-center text-muted-foreground">
-                    <CalendarDays className="h-8 w-8" />
+          {events.map((ev) => {
+            const hasMeet = !!ev.meetLink;
+            const hasRec = !!ev.recordingUrl;
+            return (
+              <Card
+                key={ev.id}
+                className="overflow-hidden border-border/70 flex flex-col"
+              >
+                <div className="aspect-video bg-muted relative">
+                  {ev.image ? (
+                    <img
+                      src={ev.image}
+                      alt={ev.title}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full grid place-items-center text-muted-foreground">
+                      <CalendarDays className="h-8 w-8" />
+                    </div>
+                  )}
+                  <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
+                    <Badge
+                      className={
+                        ev.type === "Physical"
+                          ? "bg-brand-red hover:bg-brand-red"
+                          : "bg-brand-black hover:bg-brand-black"
+                      }
+                    >
+                      {ev.type}
+                    </Badge>
+                    <Badge
+                      className={
+                        ev.status === "Upcoming"
+                          ? "bg-emerald-600 hover:bg-emerald-600"
+                          : "bg-muted-foreground"
+                      }
+                    >
+                      {ev.status}
+                    </Badge>
+                    {hasMeet ? (
+                      <Badge
+                        variant="outline"
+                        className="border-brand-red/40 text-brand-red bg-white/95 backdrop-blur gap-1"
+                        title={ev.meetLink || ""}
+                      >
+                        <Video className="h-3 w-3" /> Meet link
+                      </Badge>
+                    ) : null}
+                    {hasRec ? (
+                      <Badge
+                        variant="outline"
+                        className="border-brand-black/40 text-brand-black bg-white/95 backdrop-blur gap-1"
+                        title={ev.recordingTitle || ev.recordingUrl || ""}
+                      >
+                        <FileText className="h-3 w-3" /> Recording
+                      </Badge>
+                    ) : null}
                   </div>
-                )}
-                <div className="absolute top-2 left-2 flex gap-1.5">
-                  <Badge
-                    className={
-                      ev.type === "Physical"
-                        ? "bg-brand-red hover:bg-brand-red"
-                        : "bg-brand-black hover:bg-brand-black"
-                    }
-                  >
-                    {ev.type}
-                  </Badge>
-                  <Badge
-                    className={
-                      ev.status === "Upcoming"
-                        ? "bg-emerald-600 hover:bg-emerald-600"
-                        : "bg-muted-foreground"
-                    }
-                  >
-                    {ev.status}
-                  </Badge>
                 </div>
-              </div>
-              <CardContent className="p-4 flex-1 flex flex-col">
-                <h3 className="font-serif-display text-lg font-bold leading-tight">
-                  {ev.title}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1">{ev.time}</p>
-                <p className="text-xs text-muted-foreground">{ev.location}</p>
-                {ev.desc ? (
-                  <p className="text-sm mt-2 line-clamp-2 text-foreground/80">
-                    {ev.desc}
+                <CardContent className="p-4 flex-1 flex flex-col">
+                  <h3 className="font-serif-display text-lg font-bold leading-tight">
+                    {ev.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {ev.time}
                   </p>
-                ) : null}
-                <div className="mt-auto flex items-center justify-end gap-1 pt-3">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setEditing(ev);
-                      setDialogOpen(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" /> Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-brand-red"
-                    onClick={() => void remove(ev)}
-                  >
-                    <Trash2 className="h-4 w-4" /> Delete
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <p className="text-xs text-muted-foreground">{ev.location}</p>
+                  {ev.meetingDate ? (
+                    <p className="text-xs text-brand-red/80 mt-1 inline-flex items-center gap-1">
+                      <CalendarClock className="h-3 w-3" /> {ev.meetingDate}
+                    </p>
+                  ) : null}
+                  {ev.desc ? (
+                    <p className="text-sm mt-2 line-clamp-2 text-foreground/80">
+                      {ev.desc}
+                    </p>
+                  ) : null}
+
+                  {/* Meet link / recording summary */}
+                  {hasMeet ? (
+                    <div className="mt-3 rounded-md border border-brand-red/15 bg-brand-red/[0.04] px-2.5 py-2 text-[11px]">
+                      <p className="font-semibold text-brand-red inline-flex items-center gap-1">
+                        <Video className="h-3 w-3" /> Meet link
+                      </p>
+                      <p className="truncate text-muted-foreground" title={ev.meetLink || ""}>
+                        {ev.meetLink}
+                      </p>
+                    </div>
+                  ) : null}
+                  {hasRec ? (
+                    <div className="mt-2 rounded-md border border-brand-black/15 bg-brand-black/[0.03] px-2.5 py-2 text-[11px]">
+                      <p className="font-semibold text-brand-black inline-flex items-center gap-1">
+                        <FileText className="h-3 w-3" />{" "}
+                        {ev.recordingTitle || "Recording"}
+                      </p>
+                      <p className="truncate text-muted-foreground" title={ev.recordingUrl || ""}>
+                        {ev.recordingUrl}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {/* Per-event actions */}
+                  <div className="mt-auto pt-3 flex flex-wrap items-center gap-1.5">
+                    {hasMeet ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 border-brand-red/30 text-brand-red hover:bg-brand-red/5"
+                        onClick={() => void copyMeetLink(ev)}
+                        title="Copy meet link"
+                      >
+                        <Copy className="h-3.5 w-3.5" /> Meet link
+                      </Button>
+                    ) : null}
+                    {hasRec ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 border-[#25D366]/40 text-[#1ebe57] hover:bg-[#25D366]/5"
+                          onClick={() => setShareOpen(ev)}
+                          title="Share recording on WhatsApp"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" /> Share
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 border-brand-black/30 text-brand-black hover:bg-brand-black/5"
+                          onClick={() => {
+                            if (!ev.recordingUrl) return;
+                            window.open(
+                              ev.recordingUrl,
+                              "_blank",
+                              "noopener,noreferrer"
+                            );
+                          }}
+                          title="Download recording (opens in new tab)"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" /> Recording
+                        </Button>
+                      </>
+                    ) : null}
+                    <div className="ml-auto flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8"
+                        onClick={() => {
+                          setEditing(ev);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" /> Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-brand-red"
+                        onClick={() => void remove(ev)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Delete
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -1663,7 +1882,160 @@ function EventsTab() {
           setEditing(null);
         }}
       />
+
+      {/* Share recording on WhatsApp dialog (rendered only when an event is selected) */}
+      {shareOpen ? (
+        <ShareRecordingDialog
+          key={shareOpen.id}
+          event={shareOpen}
+          onOpenChange={(o) => !o && setShareOpen(null)}
+        />
+      ) : null}
     </div>
+  );
+}
+
+/**
+ * ShareRecordingDialog — pick a member (or enter a phone) and open wa.me
+ * with the recording link pre-filled. Parent renders this ONLY when an
+ * event is selected (with key=event.id), so we initialise state from props
+ * directly without a set-state-in-effect.
+ */
+function ShareRecordingDialog({
+  event,
+  onOpenChange,
+}: {
+  event: AdminEventItem;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const [members, setMembers] = useState<Member[]>([]);
+  // Start in "loading" state — we fetch members on mount.
+  const [loadingM, setLoadingM] = useState(true);
+  const [memberId, setMemberId] = useState<string>("custom");
+  const [phone, setPhone] = useState("");
+
+  const recUrl = event.recordingUrl || "";
+  const recTitle = event.recordingTitle || event.title || "the recording";
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/admin/members", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        if (d.ok) setMembers(d.members);
+      })
+      .catch(() => {})
+      .finally(() => alive && setLoadingM(false));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const selectedMember = members.find((m) => m.id === memberId);
+  const finalPhone =
+    memberId !== "custom" && selectedMember
+      ? selectedMember.phone.replace(/[^\d]/g, "")
+      : phone.replace(/[^\d]/g, "");
+
+  function openWhatsApp() {
+    if (!recUrl || !finalPhone) {
+      toast.error("Pick a member or enter a phone, and ensure the event has a recording URL.");
+      return;
+    }
+    const text = `Recording for ${event.title}: ${recUrl}`;
+    const link = `https://wa.me/91${finalPhone}?text=${encodeURIComponent(text)}`;
+    window.open(link, "_blank", "noopener,noreferrer");
+    toast.success("WhatsApp opened with the recording link.");
+    onOpenChange(false);
+  }
+
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-serif-display">
+            Share recording on WhatsApp
+          </DialogTitle>
+          <DialogDescription>
+            Pick a member from your list (or enter a phone) — we&rsquo;ll open
+            WhatsApp with the recording link pre-filled.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="rounded-md border border-brand-black/15 bg-brand-black/[0.02] px-3 py-2 text-xs">
+            <p className="font-semibold text-brand-black inline-flex items-center gap-1">
+              <FileText className="h-3 w-3" /> {recTitle}
+            </p>
+            <p className="text-muted-foreground truncate" title={recUrl}>
+              {recUrl}
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="share-member">Pick a member</Label>
+            <Select value={memberId} onValueChange={(v) => setMemberId(v)}>
+              <SelectTrigger id="share-member">
+                <SelectValue placeholder="Select member" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="custom">Custom phone number</SelectItem>
+                {loadingM ? (
+                  <SelectItem value="__loading" disabled>
+                    Loading members…
+                  </SelectItem>
+                ) : members.length === 0 ? (
+                  <SelectItem value="__none" disabled>
+                    No members yet
+                  </SelectItem>
+                ) : (
+                  members.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name} · {m.phone}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {memberId === "custom" ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="share-phone">Phone number</Label>
+              <Input
+                id="share-phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                inputMode="numeric"
+                placeholder="e.g. 9424242043"
+              />
+              <p className="text-xs text-muted-foreground">
+                We&rsquo;ll prefix with <code>91</code> (India) automatically.
+              </p>
+            </div>
+          ) : null}
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            className="bg-[#25D366] hover:bg-[#1ebe57] text-white"
+            onClick={openWhatsApp}
+            disabled={!finalPhone || !recUrl}
+          >
+            <MessageCircle className="h-4 w-4" /> Open WhatsApp
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1686,6 +2058,10 @@ function EventDialog({
     desc: "",
     image: "",
     status: "Upcoming",
+    meetLink: "",
+    meetingDate: "",
+    recordingUrl: "",
+    recordingTitle: "",
   });
   const [busy, setBusy] = useState(false);
 
@@ -1700,6 +2076,10 @@ function EventDialog({
         desc: editing.desc,
         image: editing.image || "",
         status: editing.status,
+        meetLink: editing.meetLink || "",
+        meetingDate: editing.meetingDate || "",
+        recordingUrl: editing.recordingUrl || "",
+        recordingTitle: editing.recordingTitle || "",
       });
     } else {
       setForm({
@@ -1710,6 +2090,10 @@ function EventDialog({
         desc: "",
         image: "",
         status: "Upcoming",
+        meetLink: "",
+        meetingDate: "",
+        recordingUrl: "",
+        recordingTitle: "",
       });
     }
   }, [open, editing]);
@@ -1730,6 +2114,10 @@ function EventDialog({
         desc: form.desc.trim(),
         image: form.image.trim() || null,
         status: form.status,
+        meetLink: form.meetLink.trim() || null,
+        meetingDate: form.meetingDate.trim() || null,
+        recordingUrl: form.recordingUrl.trim() || null,
+        recordingTitle: form.recordingTitle.trim() || null,
       };
       const url = editing
         ? `/api/admin/events/${editing.id}`
@@ -1884,6 +2272,66 @@ function EventDialog({
               />
             </div>
           ) : null}
+
+          <Separator />
+
+          {/* Meeting / recording section */}
+          <div className="rounded-xl border border-brand-red/15 bg-brand-red/[0.03] p-3 sm:p-4 space-y-3">
+            <div className="flex items-center gap-2 text-brand-red">
+              <Video className="h-4 w-4" />
+              <p className="font-serif-display text-sm font-semibold uppercase tracking-wider">
+                Meeting &amp; Recording
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-1">
+              Optional. Add a Google Meet / Zoom link, a human-readable meeting
+              date, and a recording URL — they power the per-event actions
+              (copy meet link, share recording on WhatsApp, download
+              recording).
+            </p>
+            <div className="space-y-1.5">
+              <Label htmlFor="e-meetlink">Meet link (Google Meet / Zoom URL)</Label>
+              <Input
+                id="e-meetlink"
+                value={form.meetLink}
+                onChange={(e) => setForm({ ...form, meetLink: e.target.value })}
+                disabled={busy}
+                placeholder="https://meet.google.com/abc-defg-hij"
+                type="url"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="e-meetingdate">Meeting date</Label>
+              <Input
+                id="e-meetingdate"
+                value={form.meetingDate}
+                onChange={(e) => setForm({ ...form, meetingDate: e.target.value })}
+                disabled={busy}
+                placeholder="e.g. 12 Oct 2025"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="e-recordingtitle">Recording title</Label>
+              <Input
+                id="e-recordingtitle"
+                value={form.recordingTitle}
+                onChange={(e) => setForm({ ...form, recordingTitle: e.target.value })}
+                disabled={busy}
+                placeholder="e.g. October Power Meet Recording"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="e-recordingurl">Recording URL</Label>
+              <Input
+                id="e-recordingurl"
+                value={form.recordingUrl}
+                onChange={(e) => setForm({ ...form, recordingUrl: e.target.value })}
+                disabled={busy}
+                placeholder="/uploads/recording.mp4 or external link"
+                type="url"
+              />
+            </div>
+          </div>
 
           <DialogFooter>
             <Button
@@ -2067,6 +2515,631 @@ function UploadTab() {
         </Card>
       ) : null}
     </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Content tab (CMS — admin edits site content)
+// ----------------------------------------------------------------------------
+
+type CmsItem = {
+  id: string;
+  key: string;
+  value: unknown;
+  updatedAt: string;
+};
+
+type PlanForm = {
+  id: string;
+  name: string;
+  badge: string;
+  price: string;
+  priceNote: string;
+  period: string;
+  description: string;
+  features: string[];
+  highlighted?: boolean;
+  cta: string;
+};
+
+function ContentTab() {
+  const [items, setItems] = useState<CmsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/site-content", {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (data.ok) setItems(data.items);
+      else toast.error(data.error || "Could not load content.");
+    } catch {
+      toast.error("Network error.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function save(key: string, value: unknown) {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/site-content", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        toast.error(data.error || "Could not save content.");
+        return;
+      }
+      // Update local state
+      setItems((prev) => {
+        const idx = prev.findIndex((x) => x.key === key);
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = data.item;
+          return next;
+        }
+        return [data.item, ...prev];
+      });
+      toast.success(`Saved "${key}". Public site will read the new value.`);
+    } catch {
+      toast.error("Network error.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Pluck helpers
+  const find = <T,>(key: string, fallback: T): T => {
+    const item = items.find((x) => x.key === key);
+    if (!item) return fallback;
+    return (item.value as T) ?? fallback;
+  };
+
+  const membershipPlans = find<PlanForm[]>("membershipPlans", []);
+  const faq = find<{ q: string; a: string }[]>("faq", []);
+  const about = find<{ heading?: string; body?: string[] }>("about", {
+    heading: "",
+    body: [],
+  });
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin inline-block" /> Loading
+          content…
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-serif-display text-2xl font-bold">Site Content</h2>
+        <p className="text-sm text-muted-foreground">
+          Admin is the source of truth for membership plans, FAQ and About
+          text. The public site reads these on load (falling back to the
+          static defaults if a key isn&apos;t in the DB).
+        </p>
+      </div>
+
+      <MembershipPlansEditor
+        key={`plans-${JSON.stringify(membershipPlans)}`}
+        plans={membershipPlans}
+        saving={busy}
+        onSave={(p) => void save("membershipPlans", p)}
+      />
+
+      <FaqEditor
+        key={`faq-${JSON.stringify(faq)}`}
+        faqs={faq}
+        saving={busy}
+        onSave={(f) => void save("faq", f)}
+      />
+
+      <AboutEditor
+        key={`about-${JSON.stringify(about)}`}
+        about={about}
+        saving={busy}
+        onSave={(a) => void save("about", a)}
+      />
+
+      <div className="rounded-xl border border-border bg-muted/40 p-5">
+        <h3 className="font-serif-display text-base font-semibold inline-flex items-center gap-2">
+          <Braces className="h-4 w-4 text-brand-red" />
+          Public Events
+        </h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          The public events section reads from the <code>AdminEvent</code>{" "}
+          table directly via <code>/api/events</code>. To add or edit events
+          for the public site, use the <strong>Events</strong> tab — any event
+          with status <em>Upcoming</em> appears on the public homepage.
+        </p>
+      </div>
+
+      {/* Raw JSON list of stored keys */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-serif-display text-lg">
+            Stored content keys
+          </CardTitle>
+          <CardDescription>
+            All SiteContent rows currently saved in the DB.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {items.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No content rows stored yet — the public site is using static
+              defaults. Save any section above to create a row.
+            </p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {items.map((it) => (
+                <li
+                  key={it.id}
+                  className="rounded-md border border-border bg-white px-3 py-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <code className="font-mono text-brand-red">{it.key}</code>
+                    <span className="text-xs text-muted-foreground">
+                      updated{" "}
+                      {new Date(it.updatedAt).toLocaleString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <pre className="mt-2 max-h-32 overflow-auto rounded bg-muted/60 p-2 text-[11px]">
+                    {JSON.stringify(it.value, null, 2)}
+                  </pre>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// --- Membership plans editor (structured) ---
+
+function MembershipPlansEditor({
+  plans,
+  saving,
+  onSave,
+}: {
+  plans: PlanForm[];
+  saving: boolean;
+  onSave: (plans: PlanForm[]) => void;
+}) {
+  // Local working copy. Parent uses a `key` derived from the server snapshot
+  // so we remount (with fresh initial state) whenever the server value
+  // changes — no set-state-in-effect needed here.
+  const [draft, setDraft] = useState<PlanForm[]>(plans);
+
+  function updatePlan(i: number, patch: Partial<PlanForm>) {
+    setDraft((prev) => {
+      const next = [...prev];
+      next[i] = { ...next[i], ...patch };
+      return next;
+    });
+  }
+
+  function updateFeature(planIdx: number, featIdx: number, val: string) {
+    setDraft((prev) => {
+      const next = [...prev];
+      const feats = [...next[planIdx].features];
+      feats[featIdx] = val;
+      next[planIdx] = { ...next[planIdx], features: feats };
+      return next;
+    });
+  }
+
+  function addFeature(planIdx: number) {
+    setDraft((prev) => {
+      const next = [...prev];
+      next[planIdx] = {
+        ...next[planIdx],
+        features: [...next[planIdx].features, ""],
+      };
+      return next;
+    });
+  }
+
+  function removeFeature(planIdx: number, featIdx: number) {
+    setDraft((prev) => {
+      const next = [...prev];
+      next[planIdx] = {
+        ...next[planIdx],
+        features: next[planIdx].features.filter((_, j) => j !== featIdx),
+      };
+      return next;
+    });
+  }
+
+  const dirty = JSON.stringify(draft) !== JSON.stringify(plans);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-serif-display text-lg inline-flex items-center gap-2">
+          <BadgePercent className="h-4 w-4 text-brand-red" />
+          Membership plans
+        </CardTitle>
+        <CardDescription>
+          Edit each plan&apos;s price, period and description. Saved as
+          SiteContent key <code>membershipPlans</code> (JSON array). The public
+          membership section reads this.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {draft.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No plans yet. (Static defaults are being used.)
+          </p>
+        ) : (
+          draft.map((p, i) => (
+            <div
+              key={p.id || i}
+              className="rounded-xl border border-border bg-white p-4 space-y-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="font-serif-display text-base font-semibold">
+                  Plan #{i + 1}
+                </h4>
+                <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={!!p.highlighted}
+                    onChange={(e) =>
+                      updatePlan(i, { highlighted: e.target.checked })
+                    }
+                  />
+                  Highlighted
+                </label>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Plan ID</Label>
+                  <Input
+                    value={p.id}
+                    onChange={(e) => updatePlan(i, { id: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Name</Label>
+                  <Input
+                    value={p.name}
+                    onChange={(e) => updatePlan(i, { name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Badge</Label>
+                  <Input
+                    value={p.badge}
+                    onChange={(e) => updatePlan(i, { badge: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Price (display string)</Label>
+                  <Input
+                    value={p.price}
+                    onChange={(e) => updatePlan(i, { price: e.target.value })}
+                    placeholder="₹9,999"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Price note</Label>
+                  <Input
+                    value={p.priceNote}
+                    onChange={(e) => updatePlan(i, { priceNote: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Period</Label>
+                  <Input
+                    value={p.period}
+                    onChange={(e) => updatePlan(i, { period: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>CTA button label</Label>
+                  <Input
+                    value={p.cta}
+                    onChange={(e) => updatePlan(i, { cta: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Description</Label>
+                <Textarea
+                  value={p.description}
+                  onChange={(e) =>
+                    updatePlan(i, { description: e.target.value })
+                  }
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Features (one per line)</Label>
+                <div className="space-y-2">
+                  {p.features.map((f, j) => (
+                    <div key={j} className="flex items-center gap-2">
+                      <Input
+                        value={f}
+                        onChange={(e) => updateFeature(i, j, e.target.value)}
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-brand-red"
+                        onClick={() => removeFeature(i, j)}
+                        aria-label="Remove feature"
+                      >
+                        <MinusCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => addFeature(i)}
+                  >
+                    <PlusCircle className="h-4 w-4" /> Add feature
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            className="bg-brand-red hover:bg-brand-red/90"
+            disabled={saving || !dirty}
+            onClick={() => onSave(draft)}
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            Save membership plans
+          </Button>
+          {dirty ? (
+            <span className="text-xs text-amber-600">Unsaved changes</span>
+          ) : (
+            <span className="text-xs text-emerald-600">All changes saved</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// --- FAQ editor (structured) ---
+
+function FaqEditor({
+  faqs,
+  saving,
+  onSave,
+}: {
+  faqs: { q: string; a: string }[];
+  saving: boolean;
+  onSave: (faqs: { q: string; a: string }[]) => void;
+}) {
+  // Parent uses a `key` derived from the server snapshot so we remount
+  // whenever the server value changes — no sync effect needed here.
+  const [draft, setDraft] = useState(faqs);
+
+  function update(i: number, patch: Partial<{ q: string; a: string }>) {
+    setDraft((prev) => {
+      const next = [...prev];
+      next[i] = { ...next[i], ...patch };
+      return next;
+    });
+  }
+  function add() {
+    setDraft((prev) => [...prev, { q: "", a: "" }]);
+  }
+  function remove(i: number) {
+    setDraft((prev) => prev.filter((_, j) => j !== i));
+  }
+  const dirty = JSON.stringify(draft) !== JSON.stringify(faqs);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-serif-display text-lg inline-flex items-center gap-2">
+          <HelpCircle className="h-4 w-4 text-brand-red" />
+          FAQ
+        </CardTitle>
+        <CardDescription>
+          List of <code>{`{q, a}`}</code> pairs. Saved as SiteContent key{" "}
+          <code>faq</code>. The public FAQ section reads this.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {draft.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No questions yet. (Static defaults are being used.)
+          </p>
+        ) : (
+          draft.map((f, i) => (
+            <div
+              key={i}
+              className="rounded-xl border border-border bg-white p-3 space-y-2"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground">
+                  Q {i + 1}
+                </span>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-brand-red"
+                  onClick={() => remove(i)}
+                  aria-label="Remove question"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+              <Input
+                value={f.q}
+                onChange={(e) => update(i, { q: e.target.value })}
+                placeholder="Question"
+              />
+              <Textarea
+                value={f.a}
+                onChange={(e) => update(i, { a: e.target.value })}
+                placeholder="Answer"
+                rows={2}
+              />
+            </div>
+          ))
+        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={add}
+            disabled={saving}
+          >
+            <PlusCircle className="h-4 w-4" /> Add question
+          </Button>
+          <Button
+            type="button"
+            className="bg-brand-red hover:bg-brand-red/90"
+            disabled={saving || !dirty}
+            onClick={() => onSave(draft)}
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            Save FAQ
+          </Button>
+          {dirty ? (
+            <span className="text-xs text-amber-600">Unsaved changes</span>
+          ) : (
+            <span className="text-xs text-emerald-600">All changes saved</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// --- About editor (textareas) ---
+
+function AboutEditor({
+  about,
+  saving,
+  onSave,
+}: {
+  about: { heading?: string; body?: string[] };
+  saving: boolean;
+  onSave: (a: { heading?: string; body?: string[] }) => void;
+}) {
+  // Parent uses a `key` derived from the server snapshot so we remount
+  // whenever the server value changes — no sync effect needed here.
+  const [heading, setHeading] = useState(about.heading || "");
+  const [bodyText, setBodyText] = useState((about.body || []).join("\n\n"));
+
+  const dirty =
+    heading !== (about.heading || "") ||
+    bodyText !== (about.body || []).join("\n\n");
+
+  function save() {
+    const body = bodyText
+      .split(/\n{2,}/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    onSave({ heading: heading.trim() || "", body });
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-serif-display text-lg inline-flex items-center gap-2">
+          <PencilLine className="h-4 w-4 text-brand-red" />
+          About / Journey text
+        </CardTitle>
+        <CardDescription>
+          Optional override for the Journey section heading and body
+          paragraphs. Leave the heading blank to keep the static hard-coded
+          copy. Saved as SiteContent key <code>about</code>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="about-heading">Heading (optional)</Label>
+          <Input
+            id="about-heading"
+            value={heading}
+            onChange={(e) => setHeading(e.target.value)}
+            placeholder="e.g. Built on trust, driven by results."
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="about-body">Body paragraphs</Label>
+          <Textarea
+            id="about-body"
+            value={bodyText}
+            onChange={(e) => setBodyText(e.target.value)}
+            rows={8}
+            placeholder="Paragraph 1…
+
+Paragraph 2…
+
+Paragraph 3…"
+          />
+          <p className="text-xs text-muted-foreground">
+            Separate each paragraph with a blank line.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            className="bg-brand-red hover:bg-brand-red/90"
+            disabled={saving || !dirty}
+            onClick={save}
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            Save About text
+          </Button>
+          {dirty ? (
+            <span className="text-xs text-amber-600">Unsaved changes</span>
+          ) : (
+            <span className="text-xs text-emerald-600">All changes saved</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
