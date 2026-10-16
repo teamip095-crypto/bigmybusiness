@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -17,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SITE } from "@/lib/site-data";
+import { MemberRegistrationDialog } from "./member-registration-dialog";
 
 const QUICK_LINKS = [
   { label: "Home", href: "#home" },
@@ -45,6 +47,7 @@ const SOCIALS = [
 ];
 
 export function Footer() {
+  const [regOpen, setRegOpen] = useState(false);
   return (
     <footer className="mt-auto bg-brand-black text-white relative overflow-hidden">
       <div className="absolute inset-0 bg-grid-dark opacity-20" />
@@ -66,14 +69,12 @@ export function Footer() {
             </div>
             <div className="flex flex-wrap gap-3 lg:justify-end">
               <Button
-                asChild
                 size="lg"
+                onClick={() => setRegOpen(true)}
                 className="bg-brand-red text-white hover:bg-brand-red/90 font-semibold h-12 px-7 shadow-brand"
               >
-                <Link href="#memberships">
-                  Become a Member
-                  <ArrowRight className="h-5 w-5 ml-1.5" />
-                </Link>
+                Become a Member
+                <ArrowRight className="h-5 w-5 ml-1.5" />
               </Button>
               <Button
                 asChild
@@ -207,6 +208,8 @@ export function Footer() {
           </div>
         </div>
       </div>
+
+      <MemberRegistrationDialog open={regOpen} onOpenChange={setRegOpen} />
     </footer>
   );
 }

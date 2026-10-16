@@ -806,3 +806,25 @@ Verification (Agent Browser):
 
 Stage Summary:
 - Public membership section now has the QR-to-pay flow: clicking either plan's Join button opens a payment dialog with a scannable UPI QR (to 9301056006@upi) for the exact plan amount (Prime ₹9,999 / Privilege ₹5,999), UPI ID, steps, and a WhatsApp confirmation button to the Raipur office. No more missing QR.
+
+---
+Task ID: FREE-MEMBER-REGISTRATION
+Agent: Main Orchestrator
+Task: "Become a Member" should open a FREE registration form (complete details + chapter selection + basic facilities preview shown before submit), separate from paid ₹5,999/₹9,999.
+
+Work Log:
+- Created /api/register-member route: validates name/phone (10-15 digits)/email; stores as AdminMember (plan "Lead", amount 0, status Pending, notes "Free member registration — Chapter: X — Business: Y"). Non-blocking on sync.
+- Created src/components/site/member-registration-dialog.tsx: a Dialog with (1) "What you get (free)" facilities preview BEFORE the form — 5 cards: Networking access, Event & chapter invites, Business referrals, App access, Expert webinars + a note to upgrade for full paid benefits; (2) form: Full name*, Phone*, Email, City, Business/Profession, "Chapter to join" (select with 7 options: Bhilai HQ, Raipur, Durg, Bilaspur, Korba, Bhilai-Supela, Other city), optional message; (3) "Register (free)" button + "No payment needed" note; (4) success state with "You're in!" + WhatsApp confirm button to office.
+- Wired the "Become a Member" buttons in navbar (desktop + mobile) and footer to open the MemberRegistrationDialog (onClick) instead of linking to #memberships.
+
+Verification (Agent Browser):
+- Click "Become a Member" → dialog opens with facilities preview + form ✓
+- VLM confirmed: "What you get (free)" with networking/events/referrals/app/webinars icons, form with all fields, "free registration - no payment required" note ✓
+- Fill + submit → success "You're in!" ✓
+- AdminMember created: plan "Lead", amount 0, status Pending ✓ (free, separate from paid)
+- Chapter select (7 options) → selecting "Raipur" → notes "Free member registration — Chapter: Raipur" ✓
+- WhatsApp confirm button present in success state ✓
+- Lint clean, HTTP 200
+
+Stage Summary:
+- "Become a Member" (navbar + footer) now opens a FREE registration dialog: basic facilities preview (networking, events, referrals, app, webinars) shown BEFORE the form, then a complete form (name/phone/email/city/business/chapter/message), free submit → stored to admin as "Lead" (amount 0, Pending), distinct from paid ₹5,999/₹9,999 (which is the membership section QR-payment flow). Chapter selection captured.

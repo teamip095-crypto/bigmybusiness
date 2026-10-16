@@ -29,10 +29,12 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { NAV_ITEMS, SITE } from "@/lib/site-data";
+import { MemberRegistrationDialog } from "./member-registration-dialog";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [regOpen, setRegOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -169,13 +171,11 @@ export function Navbar() {
             </Button>
             <Button
               size="sm"
-              asChild
+              onClick={() => setRegOpen(true)}
               className="bg-brand-red text-white hover:bg-brand-red/90 font-semibold shadow-brand-sm"
             >
-              <Link href="#memberships">
-                Become a Member
-                <ArrowRight className="h-4 w-4 ml-1.5" />
-              </Link>
+              Become a Member
+              <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
           </div>
 
@@ -240,13 +240,11 @@ export function Navbar() {
 
                 <div className="p-4 border-t border-black/5 space-y-3">
                   <Button
-                    asChild
+                    onClick={() => { setMobileOpen(false); setRegOpen(true); }}
                     className="w-full bg-brand-red text-white hover:bg-brand-red/90 font-semibold h-12"
                   >
-                    <Link href="#memberships" onClick={() => setMobileOpen(false)}>
-                      Become a Member
-                      <ArrowRight className="h-4 w-4 ml-1.5" />
-                    </Link>
+                    Become a Member
+                    <ArrowRight className="h-4 w-4 ml-1.5" />
                   </Button>
                   <a
                     href={`tel:${SITE.phone}`}
@@ -261,6 +259,8 @@ export function Navbar() {
           </Sheet>
         </div>
       </nav>
+
+      <MemberRegistrationDialog open={regOpen} onOpenChange={setRegOpen} />
     </motion.header>
   );
 }
