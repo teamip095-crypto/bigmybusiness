@@ -24,25 +24,23 @@ function rateLimit(req: NextRequest, limit: number): boolean {
 }
 
 // ── Bot / scraper detection ──
+// Only block aggressive scraping tools — allow curl/browsers for legitimate use.
 const BOT_SIGS = [
   "scrapy",
   "python-requests",
-  "curl/",
   "wget/",
   "httpx",
   "go-http-client",
-  "node-fetch",
-  "postman",
+  "postmanruntime",
   "insomnia",
-  "bot",
   "crawler",
   "spider",
   "headless",
 ];
 function isBot(ua: string): boolean {
   const l = (ua || "").toLowerCase();
-  // allow Googlebot / Bingbot (for SEO) but block scrapers
-  if (l.includes("googlebot") || l.includes("bingbot") || l.includes("duckduckbot"))
+  // allow empty UA (some mobile browsers), curl (API testing), and search bots
+  if (!ua || l.includes("curl") || l.includes("googlebot") || l.includes("bingbot") || l.includes("duckduckbot"))
     return false;
   return BOT_SIGS.some((s) => l.includes(s));
 }
