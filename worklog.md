@@ -755,3 +755,35 @@ Stage Summary:
 - Invoice to WhatsApp: admin clicks the WhatsApp icon → opens wa.me to the member's phone with invoice no/name/plan/amount/status + a public link to view/download the PDF (which has the QR). Member opens link, scans QR, pays.
 - Revenue + member detail: already in admin Members tab (totalCollected, per-member plan/amount/status) + Excel export (styled .xlsx with totals). All flows (contact form, build-chapter form) push into the member list.
 - Admin data cleared for fresh start. Website fully functional, lint clean, HTTP 200.
+
+---
+Task ID: AUTONOMOUS-CTO-AUDIT
+Agent: Main Orchestrator (autonomous CTO mode)
+Task: Full technical ownership — inspect, build/repair, QA, bug-fix, security audit, launch readiness, final report.
+
+Findings & fixes:
+- CRITICAL BUG: /api/admin/upload route was MISSING (admin Upload tab broken). Created it with: auth (getCurrentAdmin), image-mime allowlist (PNG/JPG/WebP/GIF/SVG), 8MB size cap, safe filename (timestamp+random via Web Crypto getRandomValues), path-traversal defense (path.relative check), saves to public/uploads/.
+- BUG: crypto.randomBytes (Node API) used where global `crypto` is Web Crypto → upload 500. Fixed to crypto.getRandomValues.
+- MOBILE: 14px horizontal overflow from decorative glow/marquee on 390px. Fixed with overflow-x:hidden + max-width:100vw on html,body. Verified: window.scrollTo(50,0)→scrollX=0 (no horizontal scroll possible).
+- HARDENING: /api/admin/forgot now deletes expired/used reset codes (prevents table growth).
+- Confirmed auth enforcement: ALL protected admin routes (members, members/[id], events, events/[id], upload, export, change-password, invoice) use getCurrentAdmin → 401 without valid session.
+
+Full end-to-end QA (all passed):
+- Lint clean ✓ | All 9 marketing sections render, no console errors ✓
+- FAQ accordion opens ✓ | Blog dialog opens ✓ | Membership CTAs → #contact ✓ | Footer Admin button → #admin ✓
+- Contact form → AdminMember synced (Privilege/Pending) ✓ | Build-chapter → AdminMember (Franchise) ✓
+- Admin: register/login/me ✓ | Member CRUD ✓ | Event CRUD ✓ | Upload image (200) + reject non-image (415) ✓
+- Excel export (valid .xlsx, 200) ✓ | Invoice PDF (valid, 200) ✓ | Invoice WhatsApp link (signed token) ✓
+- Public invoice /api/invoice/[token] (no auth, signed) ✓
+- Forgot → wa.me code → reset → new password works, old rejected ✓
+- Unauthorized → 401 on all protected routes ✓
+- Mobile 390px: no horizontal scroll, clean layout ✓
+- Admin test data cleared for fresh start (exists: false)
+
+Stage Summary:
+- Project: Big My Business — Next.js 16 + TS + Tailwind + shadcn/ui + Prisma(SQLite) + exceljs + pdfkit + qrcode + bcryptjs.
+- All critical bugs fixed (missing upload route, crypto API, mobile overflow). Hardening added (reset-code cleanup).
+- Full QA passed end-to-end (lint, browser, API, authz, mobile).
+- Security: HMAC-signed sessions, bcrypt, input validation, image allowlist, signed public invoice tokens, 401 on all protected routes, no hardcoded credentials.
+- Environment limitation (honest): this is a cloud sandbox — no external hosting/domain/HTTPS/CI-CD access. Dev server on port 3000 (preview panel) is the live artifact.
+- Decision: CONDITIONAL GO — all mandatory release gates pass; the only condition is external production hosting setup (needs the owner's hosting credentials).

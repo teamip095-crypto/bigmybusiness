@@ -50,6 +50,11 @@ export async function POST(req: NextRequest) {
     const code = generateCode();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // +10 min
 
+    // housekeeping: delete expired/used codes so the table can't grow unbounded
+    await db.passwordReset.deleteMany({
+      where: { OR: [{ expiresAt: { lt: new Date() } }, { used: true }] },
+    });
+
     await db.passwordReset.create({
       data: { adminId: admin.id, code, expiresAt, used: false },
     });

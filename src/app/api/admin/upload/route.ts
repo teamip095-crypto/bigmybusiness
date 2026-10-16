@@ -1,55 +1,115 @@
 import { NextRequest, NextResponse } from "next/server";
+import { promises as fs } from "fs";
+import path from "path";
 import { getCurrentAdmin } from "@/lib/admin-auth";
-import { writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
-import { randomBytes } from "node:crypto";
 
-const ALLOWED = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif", "image/avif"]);
-const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+export const dynamic = "force-dynamic";
 
-/** POST /api/admin/upload — accept FormData("file"), save to public/uploads/, return its URL. */
+const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
+
+// allow common image types only
+const ALLOWED = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+]);
+const EXT_BY_MIME: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/svg+xml": "svg",
+};
+const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
+
+// POST /api/admin/upload — accept a single image (FormData field "file"),
+// validate type/size, save to public/uploads/, return { url }.
 export async function POST(req: NextRequest) {
   const admin = await getCurrentAdmin(req);
   if (!admin) {
-    return NextResponse.json({ ok: false, error: "Not authenticated." }, { status: 401 });
-  }
-
-  try {
-    const form = await req.formData();
-    const file = form.get("file");
-    if (!(file instanceof File)) {
-      return NextResponse.json(
-        { ok: false, error: "No file provided. Use form field name 'file'." },
-        { status: 400 }
-      );
-    }
-    if (!ALLOWED.has(file.type)) {
-      return NextResponse.json(
-        { ok: false, error: `Unsupported file type: ${file.type}. Allowed: png, jpg, webp, gif, avif.` },
-        { status: 400 }
-      );
-    }
-    if (file.size > MAX_BYTES) {
-      return NextResponse.json(
-        { ok: false, error: "File is too large. Max 5 MB." },
-        { status: 400 }
-      );
-    }
-
-    const ext = (file.name.split(".").pop() || "bin").toLowerCase().slice(0, 5);
-    const safeExt = ["png", "jpg", "jpeg", "webp", "gif", "avif"].includes(ext) ? ext : "bin";
-    const name = `${Date.now()}-${randomBytes(6).toString("hex")}.${safeExt}`;
-    const dir = join(process.cwd(), "public", "uploads");
-    await mkdir(dir, { recursive: true });
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(join(dir, name), buffer);
-
-    return NextResponse.json({ ok: true, url: `/uploads/${name}` });
-  } catch (e) {
-    console.error("[admin/upload] error:", e);
     return NextResponse.json(
-      { ok: false, error: "Could not save file." },
-      { status: 500 }
+      { ok: false, error: "Unauthorized" },
+      { status: 401 }
     );
   }
+
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: "Expected multipart form data." },
+      { status: 400 }
+    );
+  }
+
+  const file = form.get("file");
+  if (!file || !(file instanceof File)) {
+    return NextResponse.json(
+      { ok: false, error: "No file field in form data." },
+      { status: 400 }
+    );
+  }
+
+  // validate type
+  const mime = (file.type || "").toLowerCase();
+  if (!ALLOWED.has(mime)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Only image files (PNG, JPG, WebP, GIF, SVG) are allowed.",
+      },
+      { status: 415 }
+    );
+  }
+
+  // validate size
+  if (file.size > MAX_BYTES) {
+    return NextResponse.json(
+      { ok: false, error: "File too large. Max 8 MB." },
+      { status: 413 }
+    );
+  }
+
+  // ensure upload dir exists
+  await fs.mkdir(UPLOAD_DIR, { recursive: true });
+
+  // safe filename — timestamp + random hex + verified extension
+  const ext = EXT_BY_MIME[mime];
+  const randBytes = new Uint8Array(8);
+  crypto.getRandomValues(randBytes);
+  const rand = Array.from(randBytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  const filename = `${Date.now()}-${rand}.${ext}`;
+  const filepath = path.join(UPLOAD_DIR, filename);
+
+  // defence-in-depth: ensure the resolved path is still inside UPLOAD_DIR
+  const rel = path.relative(UPLOAD_DIR, filepath);
+  if (rel.startsWith("..") || path.isAbsolute(rel)) {
+    return NextResponse.json(
+      { ok: false, error: "Invalid file path." },
+      { status: 400 }
+    );
+  }
+
+  const buf = Buffer.from(await file.arrayBuffer());
+  await fs.writeFile(filepath, buf);
+
+  return NextResponse.json({
+    ok: true,
+    url: `/uploads/${filename}`,
+    size: buf.length,
+  });
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { ok: false, error: "Use POST to upload a file." },
+    { status: 405 }
+  );
 }
