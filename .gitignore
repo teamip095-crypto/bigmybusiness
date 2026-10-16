@@ -74,3 +74,4 @@ server.log
 .zscripts/*.log
 .zscripts/*.pid
 worklog.md
+tool-results/
