@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
     const username = String(body.username || "").trim();
     const password = String(body.password || "");
     const whatsappNumber = String(body.whatsappNumber || "").replace(/[^\d]/g, "");
+    const email = body.email ? String(body.email).trim().toLowerCase() : null;
 
     if (!username || !password || !whatsappNumber) {
       return NextResponse.json(
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const admin = await db.adminUser.create({
-      data: { username, passwordHash, whatsappNumber },
+      data: { username, passwordHash, whatsappNumber, email },
     });
 
     const signed = await signSession(admin.id);

@@ -63,9 +63,17 @@ export async function POST(req: NextRequest) {
     const encoded = encodeURIComponent(text);
     const waLink = `https://wa.me/${digits}?text=${encoded}`;
 
+    // FREE email recovery via mailto: (opens admin's email client — no paid
+    // email service needed). Admin self-emails the code.
+    const email = admin.email;
+    const subject = encodeURIComponent("Big My Business — Admin Password Reset Code");
+    const mailtoLink = email
+      ? `mailto:${email}?subject=${subject}&body=${encoded}`
+      : null;
+
     // NOTE: the code is intentionally NOT returned in the response body —
-    // only the WhatsApp self-message link.
-    return NextResponse.json({ ok: true, waLink });
+    // only the WhatsApp self-message link + the mailto: link.
+    return NextResponse.json({ ok: true, waLink, mailtoLink, hasEmail: !!email });
   } catch (e) {
     console.error("[admin/forgot] error:", e);
     return NextResponse.json(

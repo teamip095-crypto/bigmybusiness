@@ -3,6 +3,7 @@ import { Inter, Fraunces, Pacifico } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { AntiCopyGuard } from "@/components/site/anti-copy-guard";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -63,9 +64,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* cross-browser compatibility: viewport + theme color */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        <meta name="theme-color" content="#D32121" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+        {/* charset for all browsers */}
+        <meta charSet="utf-8" />
+      </head>
       <body
         className={`${inter.variable} ${fraunces.variable} ${pacifico.variable} font-sans antialiased bg-background text-foreground`}
       >
+        <AntiCopyGuard />
         {children}
         <Toaster />
         <SonnerToaster position="top-center" richColors closeButton />
