@@ -82,9 +82,10 @@ export async function POST(req: NextRequest) {
     setSessionCookie(res, admin.id, signed);
     return res;
   } catch (e) {
-    console.error("[admin/register] error:", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[admin/register] error:", msg, e instanceof Error ? e.stack : "");
     return NextResponse.json(
-      { ok: false, error: "Could not register admin. Please try again." },
+      { ok: false, error: process.env.NODE_ENV === "production" ? msg : msg },
       { status: 500 }
     );
   }
