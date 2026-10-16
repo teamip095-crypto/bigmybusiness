@@ -787,3 +787,22 @@ Stage Summary:
 - Security: HMAC-signed sessions, bcrypt, input validation, image allowlist, signed public invoice tokens, 401 on all protected routes, no hardcoded credentials.
 - Environment limitation (honest): this is a cloud sandbox — no external hosting/domain/HTTPS/CI-CD access. Dev server on port 3000 (preview panel) is the live artifact.
 - Decision: CONDITIONAL GO — all mandatory release gates pass; the only condition is external production hosting setup (needs the owner's hosting credentials).
+
+---
+Task ID: PUBLIC-QR-PAYMENT
+Agent: Main Orchestrator
+Task: Public membership section had no QR to scan & pay to 9301056006 — add it.
+
+Work Log:
+- Installed qrcode.react (client-side QR component, QRCodeSVG).
+- Created src/components/site/payment-dialog.tsx: a Dialog that shows a UPI QR (QRCodeSVG) encoding upi://pay?pa=9301056006@upi&pn=BigMyBusiness&am=<amount>&cu=INR&tn=BigMyBusiness <Plan> Membership — for the selected plan amount. Includes: plan name + period + amount, the QR in a brand-red bordered frame, "Scan with any UPI app" + GPay/PhonePe/Paytm/BHIM, payee/UPI ID (copyable)/amount/plan table, 3-step instructions, name+phone inputs, and a green "I've paid — notify on WhatsApp" button → wa.me/919301056006 (Raipur office) with a pre-filled payment confirmation (name/phone/plan/amount/VPA).
+- Wired into membership.tsx: the "Join Prime/Privilege Membership" buttons now open the PaymentDialog (onClick → setPayPlan) instead of linking to #contact. planKey maps plan.id (prime/privilege) → SITE.upi.plans key (Prime/Privilege) so the amount resolves correctly (fixed the ₹0 bug caused by keying on plan.name="Prime Membership").
+
+Verification (Agent Browser):
+- Click "Join Prime Membership" → dialog opens with QR + ₹9,999 + UPI ID 9301056006@upi ✓
+- Click "Join Privilege Membership" → dialog opens with QR + ₹5,999 ✓
+- WhatsApp "I've paid" button present → wa.me/919301056006 with confirmation message ✓
+- Lint clean, HTTP 200
+
+Stage Summary:
+- Public membership section now has the QR-to-pay flow: clicking either plan's Join button opens a payment dialog with a scannable UPI QR (to 9301056006@upi) for the exact plan amount (Prime ₹9,999 / Privilege ₹5,999), UPI ID, steps, and a WhatsApp confirmation button to the Raipur office. No more missing QR.
