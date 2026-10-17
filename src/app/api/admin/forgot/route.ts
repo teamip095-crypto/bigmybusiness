@@ -1,87 +1,85 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-
-function generateCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
+import { getAuthClient, getSiteUrl } from "@/lib/supabase-auth";
 
 /**
- * POST /api/admin/forgot — generate a 6-digit reset code, store it (10-min
- * expiry), and return a wa.me self-message link (NOT the code itself).
+ * POST /api/admin/forgot — send a REAL email with password reset link
+ * via Supabase Auth (free tier email). Also returns a WhatsApp fallback.
  *
- * The admin taps the link, WhatsApp opens pre-filled with their own number
- * and a message containing the code. They send it to themselves, read it,
- * and enter it on the reset screen.
+ * Body: { email: "admin@email.com" }
+ *
+ * Supabase sends the email from noreply@mail.app.supabase.com with a link
+ * that redirects to the site with a recovery token. The admin clicks it,
+ * arrives at #admin, and sees a "Set New Password" form.
  */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const username = String(body.username || "").trim();
+    const email = String(body.email || "").trim().toLowerCase();
 
-    if (!username) {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json(
-        { ok: false, error: "Please enter your username." },
+        { ok: false, error: "Please enter a valid email address." },
         { status: 400 }
       );
     }
 
-    const admin = await db.adminUser.findUnique({ where: { username } });
+    // Find admin by email
+    const admin = await db.adminUser.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
+    });
+
+    // Don't leak whether the email exists — return generic success
     if (!admin) {
-      // Don't leak which usernames exist — return a generic message but no link.
       return NextResponse.json({
         ok: true,
-        waLink: null,
-        message:
-          "If that username exists, a reset code has been prepared and a WhatsApp link will be shown.",
+        sent: true,
+        message: "If that email is registered, a reset link has been sent.",
       });
     }
 
-    // Normalise the WhatsApp number: prefix 91 if it's a 10-digit Indian number.
-    let digits = admin.whatsappNumber.replace(/[^\d]/g, "");
-    if (digits.length === 10) digits = `91${digits}`;
-    if (digits.length < 11) {
+    // Also check if a Supabase Auth user exists with this email.
+    // If not, create one (so resetPasswordForEmail works).
+    const supabase = getAuthClient();
+    if (!supabase) {
       return NextResponse.json(
-        { ok: false, error: "Admin WhatsApp number on file is invalid. Please contact support." },
+        { ok: false, error: "Email service not configured." },
         { status: 500 }
       );
     }
 
-    const code = generateCode();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // +10 min
-
-    // housekeeping: delete expired/used codes so the table can't grow unbounded
-    await db.passwordReset.deleteMany({
-      where: { OR: [{ expiresAt: { lt: new Date() } }, { used: true }] },
+    // Try to send the reset email via Supabase Auth
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${getSiteUrl()}/#admin`,
     });
 
-    await db.passwordReset.create({
-      data: { adminId: admin.id, code, expiresAt, used: false },
+    if (error) {
+      console.error("[admin/forgot] supabase error:", error.message);
+      // Fallback: WhatsApp self-message
+      let digits = admin.whatsappNumber.replace(/[^\d]/g, "");
+      if (digits.length === 10) digits = `91${digits}`;
+      const waLink = digits.length >= 11
+        ? `https://wa.me/${digits}?text=${encodeURIComponent("Please reset your Big My Business admin password. Contact support.")}`
+        : null;
+      return NextResponse.json({
+        ok: true,
+        sent: false,
+        waLink,
+        message: "Email could not be sent. Use WhatsApp fallback.",
+        error: error.message,
+      });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      sent: true,
+      message: `Reset link sent to ${email}. Check your inbox (and spam folder).`,
     });
-
-    const text = `Your Big My Business admin reset code is ${code}. It expires in 10 minutes. If you did not request this reset, ignore this message.`;
-    const encoded = encodeURIComponent(text);
-    const waLink = `https://wa.me/${digits}?text=${encoded}`;
-
-    // FREE email recovery via mailto: (opens admin's email client — no paid
-    // email service needed). Admin self-emails the code.
-    const email = admin.email;
-    const subject = encodeURIComponent("Big My Business — Admin Password Reset Code");
-    const mailtoLink = email
-      ? `mailto:${email}?subject=${subject}&body=${encoded}`
-      : null;
-
-    // NOTE: the code is intentionally NOT returned in the response body —
-    // only the WhatsApp self-message link + the mailto: link.
-    return NextResponse.json({ ok: true, waLink, mailtoLink, hasEmail: !!email });
   } catch (e) {
     console.error("[admin/forgot] error:", e);
     return NextResponse.json(
-      { ok: false, error: "Could not generate a reset code. Please try again." },
+      { ok: false, error: "Could not send reset email. Please try again." },
       { status: 500 }
     );
   }
 }
-
-// bcrypt is imported for parity / future password-equality checks.
-void bcrypt;

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   LogOut,
+  Mail,
   Users,
   CalendarDays,
   ImageUp,
@@ -564,154 +565,113 @@ function RegisterForm({
 }
 
 function ForgotForm({ onDone }: { onDone: () => void }) {
-  const [username, setUsername] = useState("");
-  const [waLink, setWaLink] = useState<string | null>(null);
-  const [code, setCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
-  const [stage, setStage] = useState<"request" | "reset">("request");
+  const [sent, setSent] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [resetEmail, setResetEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
-  async function requestCode(e: React.FormEvent) {
-    e.preventDefault();
-    if (!username) {
-      toast.error("Please enter your username.");
-      return;
+  // Check URL for Supabase recovery token (from email link)
+  useEffect(() => {
+    const search = window.location.search;
+    const hash = window.location.hash;
+    const params = new URLSearchParams(search);
+    // Also check hash params (some email clients put everything after #)
+    const hashParams = new URLSearchParams(hash.split("?")[1] || hash.replace("#",""));
+    const at = params.get("access_token") || hashParams.get("access_token");
+    const type = params.get("type") || hashParams.get("type");
+    if (at && type === "recovery") {
+      setResetToken(at);
+      setResetEmail(params.get("email") || hashParams.get("email") || "");
     }
+  }, []);
+
+  async function sendResetEmail(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email) { toast.error("Please enter your email."); return; }
     setBusy(true);
     try {
       const res = await fetch("/api/admin/forgot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) {
-        toast.error(data.error || "Could not generate reset code.");
-        return;
-      }
-      if (data.waLink) {
-        setWaLink(data.waLink);
-        setStage("reset");
-        toast.success("Reset code generated. Tap the WhatsApp button below.");
-      } else {
-        toast.info(data.message || "If that username exists, a reset has been prepared.");
-      }
-    } catch {
-      toast.error("Network error. Please try again.");
-    } finally {
-      setBusy(false);
-    }
+      if (!res.ok || !data.ok) { toast.error(data.error || "Could not send."); return; }
+      setSent(true);
+      toast.success("Reset link sent!", { description: data.message || "Check your inbox." });
+    } catch { toast.error("Network error."); }
+    finally { setBusy(false); }
   }
 
-  async function submitReset(e: React.FormEvent) {
+  async function submitNewPassword(e: React.FormEvent) {
     e.preventDefault();
-    if (!username || !code || !newPassword) {
-      toast.error("All fields are required.");
-      return;
-    }
+    if (!resetToken || !newPassword) { toast.error("All fields required."); return; }
+    if (newPassword.length < 6) { toast.error("Min 6 characters."); return; }
     setBusy(true);
     try {
-      const res = await fetch("/api/admin/reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, code, newPassword }),
+      const res = await fetch("/api/admin/reset-email", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken: resetToken, email: resetEmail, newPassword }),
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) {
-        toast.error(data.error || "Could not reset password.");
-        return;
-      }
-      toast.success("Password reset. You can log in now.");
+      if (!res.ok || !data.ok) { toast.error(data.error || "Failed."); return; }
+      toast.success("Password updated! Log in now.");
+      setResetToken(null);
       onDone();
-    } catch {
-      toast.error("Network error. Please try again.");
-    } finally {
-      setBusy(false);
-    }
+    } catch { toast.error("Network error."); }
+    finally { setBusy(false); }
   }
 
-  if (stage === "reset" && waLink) {
+  // Recovery token from email link → show "set new password" form
+  if (resetToken) {
     return (
-      <div className="space-y-4">
-        <a
-          href={waLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#25D366] px-4 py-3 text-white font-semibold shadow hover:bg-[#1ebe57] transition"
-        >
-          <MessageCircle className="h-5 w-5" />
-          Open WhatsApp to receive your reset code
-        </a>
+      <form onSubmit={submitNewPassword} className="space-y-4">
+        <div className="rounded-lg border border-brand-red/20 bg-brand-red/5 p-3 text-sm">
+          <p className="font-semibold text-brand-red">Password Reset</p>
+          <p className="text-xs text-muted-foreground mt-1">Email verified. Set your new password below.</p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="email-reset-pw">New password</Label>
+          <PasswordInput id="email-reset-pw" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" placeholder="Min. 6 characters" disabled={busy} />
+        </div>
+        <Button type="submit" className="w-full bg-brand-red hover:bg-brand-red/90" disabled={busy}>
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          Set new password
+        </Button>
+      </form>
+    );
+  }
+
+  // After sending email → show "check inbox" message
+  if (sent) {
+    return (
+      <div className="space-y-4 text-center">
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-brand-red/10">
+          <Mail className="h-6 w-6 text-brand-red" />
+        </div>
+        <p className="text-sm font-semibold">Check your inbox</p>
         <p className="text-xs text-muted-foreground">
-          A WhatsApp chat with your own number opens pre-filled with the code.
-          Tap send, then read the code below. (We can&apos;t programmatically
-          send WhatsApp messages without the Business API, so this self-message
-          is the channel.)
+          A password reset link has been sent to <strong>{email}</strong>. Click the link in the email to set a new password. Check spam if needed.
         </p>
-        <Separator />
-        <form onSubmit={submitReset} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="reset-code">6-digit code</Label>
-            <Input
-              id="reset-code"
-              value={code}
-              onChange={(e) =>
-                setCode(e.target.value.replace(/[^\d]/g, "").slice(0, 6))
-              }
-              inputMode="numeric"
-              placeholder="123456"
-              className="tracking-[0.4em] text-center text-lg"
-              disabled={busy}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="reset-password">New password</Label>
-            <PasswordInput
-              id="reset-password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              autoComplete="new-password"
-              placeholder="Min. 6 characters"
-              disabled={busy}
-            />
-          </div>
-          <Button
-            type="submit"
-            className="w-full bg-brand-red hover:bg-brand-red/90"
-            disabled={busy}
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Reset password
-          </Button>
-        </form>
+        <Button variant="outline" className="w-full" onClick={() => { setSent(false); setEmail(""); }}>Try a different email</Button>
       </div>
     );
   }
 
+  // Default: email input form
   return (
-    <form onSubmit={requestCode} className="space-y-4">
+    <form onSubmit={sendResetEmail} className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Enter your username. We&apos;ll generate a 6-digit code and open
-        WhatsApp so you can self-message it to your own number.
+        Enter your registered email. We&rsquo;ll send a password reset link to your inbox (free email via Supabase).
       </p>
       <div className="space-y-1.5">
-        <Label htmlFor="forgot-username">Username</Label>
-        <Input
-          id="forgot-username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          autoComplete="username"
-          placeholder="admin1"
-          disabled={busy}
-        />
+        <Label htmlFor="forgot-email">Email address</Label>
+        <Input id="forgot-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="you@email.com" disabled={busy} />
       </div>
-      <Button
-        type="submit"
-        className="w-full bg-brand-red hover:bg-brand-red/90"
-        disabled={busy}
-      >
+      <Button type="submit" className="w-full bg-brand-red hover:bg-brand-red/90" disabled={busy}>
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-        Generate reset code
+        Send reset link
       </Button>
     </form>
   );
