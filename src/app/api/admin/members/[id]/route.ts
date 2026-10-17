@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentAdmin } from "@/lib/admin-auth";
 
-const PLANS = ["Prime", "Privilege", "Franchise"];
+const PLANS = ["Prime", "Privilege", "Franchise", "Lead"];
 const STATUSES = ["Paid", "Pending"];
 
 /** PUT /api/admin/members/[id] — update a member (auth required). */

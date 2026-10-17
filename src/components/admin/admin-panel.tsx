@@ -1039,6 +1039,25 @@ function MembersTab() {
     .filter((m) => m.paymentStatus === "Paid")
     .reduce((s, m) => s + (m.amount || 0), 0);
 
+  // Per-plan revenue breakdown
+  const planBreakdown = ["Prime", "Privilege", "Franchise", "Lead"].map((plan) => {
+    const pm = members.filter((m) => m.membershipPlan === plan);
+    return {
+      plan,
+      count: pm.length,
+      collected: pm.filter((m) => m.paymentStatus === "Paid").reduce((s, m) => s + (m.amount || 0), 0),
+    };
+  });
+
+  // Per-chapter revenue
+  const chapterBreakdown: Record<string, { count: number; collected: number }> = {};
+  for (const m of members) {
+    const ch = memberChapter(m);
+    if (!chapterBreakdown[ch]) chapterBreakdown[ch] = { count: 0, collected: 0 };
+    chapterBreakdown[ch].count++;
+    if (m.paymentStatus === "Paid") chapterBreakdown[ch].collected += m.amount || 0;
+  }
+
   async function remove(m: Member) {
     if (!confirm(`Delete member "${m.name}"? This cannot be undone.`)) return;
     try {
@@ -1079,6 +1098,48 @@ function MembersTab() {
           )}
           icon={<Loader2 className="h-4 w-4" />}
         />
+      </div>
+
+      {/* Revenue breakdown: per-plan + per-chapter */}
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-serif-display text-sm font-bold mb-3">Revenue by Plan</h3>
+            <div className="space-y-2">
+              {planBreakdown.map((p) => (
+                <div key={p.plan} className="flex items-center justify-between text-sm">
+                  <span className="font-medium">{p.plan}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-muted-foreground">{p.count} members</span>
+                    <span className="font-bold text-brand-red">₹{p.collected.toLocaleString("en-IN")}</span>
+                  </div>
+                </div>
+              ))}
+              {planBreakdown.every((p) => p.count === 0) && (
+                <p className="text-xs text-muted-foreground">No members yet.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-serif-display text-sm font-bold mb-3">Revenue by Chapter</h3>
+            <div className="space-y-2 max-h-48 overflow-y-auto scroll-brand">
+              {Object.entries(chapterBreakdown).map(([ch, s]) => (
+                <div key={ch} className="flex items-center justify-between text-sm">
+                  <span className="font-medium">{ch}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-muted-foreground">{s.count} members</span>
+                    <span className="font-bold text-brand-red">₹{s.collected.toLocaleString("en-IN")}</span>
+                  </div>
+                </div>
+              ))}
+              {Object.keys(chapterBreakdown).length === 0 && (
+                <p className="text-xs text-muted-foreground">No members yet.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Toolbar */}
@@ -2384,6 +2445,25 @@ function UploadTab() {
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [files, setFiles] = useState<{ name: string; url: string; size: number }[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(true);
+
+  const loadFiles = useCallback(async () => {
+    setLoadingFiles(true);
+    try {
+      const res = await fetch("/api/admin/upload/list", { cache: "no-store" });
+      const data = await res.json();
+      if (data.ok) setFiles(data.files);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingFiles(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadFiles();
+  }, [loadFiles]);
 
   async function uploadFile(file: File | undefined) {
     if (!file) return;
@@ -2391,8 +2471,8 @@ function UploadTab() {
       toast.error("Please select an image file.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image is larger than 5 MB.");
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Image is larger than 8 MB.");
       return;
     }
     setBusy(true);
@@ -2402,10 +2482,7 @@ function UploadTab() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: fd,
-      });
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok || !data.ok) {
         toast.error(data.error || "Upload failed.");
@@ -2413,10 +2490,32 @@ function UploadTab() {
       }
       setResult(data.url);
       toast.success("Image uploaded.");
+      void loadFiles();
     } catch {
       toast.error("Network error.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function deleteImage(name: string, url: string) {
+    if (!confirm(`Delete image "${name}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch("/api/admin/upload/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        toast.error(data.error || "Delete failed.");
+        return;
+      }
+      toast.success("Image deleted.");
+      setFiles((prev) => prev.filter((f) => f.name !== name));
+      if (result === url) setResult(null);
+    } catch {
+      toast.error("Network error.");
     }
   }
 
@@ -2437,61 +2536,28 @@ function UploadTab() {
       <div>
         <h2 className="font-serif-display text-2xl font-bold">Image Upload</h2>
         <p className="text-sm text-muted-foreground">
-          Upload images and copy their URL — use them inside events, blog posts
-          or anywhere on the site.
+          Upload images and copy their URL — use them inside events, blog posts or anywhere on the site. Uploaded images are stored permanently in Supabase Storage.
         </p>
       </div>
 
       <Card>
         <CardContent className="p-5">
           <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
-            }}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragOver(false);
-              void uploadFile(e.dataTransfer.files?.[0]);
-            }}
-            className={`rounded-xl border-2 border-dashed p-8 text-center transition ${
-              dragOver
-                ? "border-brand-red bg-brand-red/5"
-                : "border-border"
-            }`}
+            onDrop={(e) => { e.preventDefault(); setDragOver(false); void uploadFile(e.dataTransfer.files?.[0]); }}
+            className={`rounded-xl border-2 border-dashed p-8 text-center transition ${dragOver ? "border-brand-red bg-brand-red/5" : "border-border"}`}
           >
             <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-brand-red/10 text-brand-red">
               <ImageUp className="h-7 w-7" />
             </div>
-            <p className="font-serif-display text-lg font-semibold">
-              Drop an image here, or
-            </p>
-            <Button
-              type="button"
-              className="mt-3 bg-brand-red hover:bg-brand-red/90"
-              onClick={() => inputRef.current?.click()}
-              disabled={busy}
-            >
-              {busy ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Plus className="h-4 w-4" />
-              )}
+            <p className="font-serif-display text-lg font-semibold">Drop an image here, or</p>
+            <Button type="button" className="mt-3 bg-brand-red hover:bg-brand-red/90" onClick={() => inputRef.current?.click()} disabled={busy}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               Browse files
             </Button>
-            <p className="mt-2 text-xs text-muted-foreground">
-              PNG, JPG, WebP, GIF, AVIF · max 5 MB
-            </p>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) =>
-                void uploadFile(e.target.files?.[0] ?? undefined)
-              }
-            />
+            <p className="mt-2 text-xs text-muted-foreground">PNG, JPG, WebP, GIF, SVG · max 8 MB</p>
+            <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => void uploadFile(e.target.files?.[0] ?? undefined)} />
           </div>
         </CardContent>
       </Card>
@@ -2499,37 +2565,58 @@ function UploadTab() {
       {result ? (
         <Card>
           <CardHeader>
-            <CardTitle className="font-serif-display text-lg">
-              Upload result
-            </CardTitle>
-            <CardDescription>
-              Copy this URL and use it where you need it.
-            </CardDescription>
+            <CardTitle className="font-serif-display text-lg">Upload result</CardTitle>
+            <CardDescription>Copy this URL and use it where you need it.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {preview ? (
-              <img
-                src={preview}
-                alt="preview"
-                className="h-44 w-full rounded-lg object-cover border border-border"
-              />
-            ) : null}
+            {preview ? <img src={preview} alt="preview" className="h-44 w-full rounded-lg object-cover border border-border" /> : null}
             <div className="flex items-center gap-2">
-              <code className="flex-1 truncate rounded-md border border-border bg-muted px-3 py-2 text-sm">
-                {result}
-              </code>
+              <code className="flex-1 truncate rounded-md border border-border bg-muted px-3 py-2 text-sm">{result}</code>
               <Button onClick={copyUrl} variant="outline" size="sm">
-                {copied ? (
-                  <Check className="h-4 w-4 text-emerald-600" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
+                {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
                 {copied ? "Copied" : "Copy"}
               </Button>
             </div>
           </CardContent>
         </Card>
       ) : null}
+
+      {/* Uploaded images list with delete */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-serif-display text-lg">Uploaded Images</CardTitle>
+          <CardDescription>All images in Supabase Storage. Click delete to remove permanently.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loadingFiles ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+            </div>
+          ) : files.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4">No images uploaded yet.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {files.map((f) => (
+                <div key={f.name} className="group relative rounded-lg border border-border overflow-hidden">
+                  <img src={f.url} alt={f.name} className="h-28 w-full object-cover" />
+                  <div className="p-2">
+                    <p className="text-[10px] text-muted-foreground truncate">{f.name}</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-muted-foreground">{(f.size / 1024).toFixed(0)} KB</span>
+                      <button
+                        onClick={() => deleteImage(f.name, f.url)}
+                        className="text-[10px] text-brand-red hover:underline font-semibold"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
