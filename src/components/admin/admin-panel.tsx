@@ -443,6 +443,7 @@ function RegisterForm({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
 
   // If an admin already exists, registration is locked to logged-in admins.
@@ -474,6 +475,7 @@ function RegisterForm({
           username,
           password,
           whatsappNumber: whatsapp.replace(/[^\d]/g, ""),
+          email: email || null,
         }),
       });
       const data = await res.json();
@@ -532,6 +534,20 @@ function RegisterForm({
         />
         <p className="text-xs text-muted-foreground">
           Used for self-messaging password resets (wa.me).
+        </p>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="reg-email">Email (for password recovery)</Label>
+        <Input
+          id="reg-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@email.com"
+          disabled={busy}
+        />
+        <p className="text-xs text-muted-foreground">
+          Used for email-based password recovery (mailto: self-email).
         </p>
       </div>
       <Button
