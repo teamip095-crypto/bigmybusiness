@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -17,6 +18,19 @@ const fade = {
 };
 
 export function Events() {
+  const [events, setEvents] = useState<EventItem[]>(EVENTS);
+
+  useEffect(() => {
+    fetch("/api/events", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ok && Array.isArray(d.events) && d.events.length > 0) {
+          setEvents(d.events as EventItem[]);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <section id="events" className="relative py-20 lg:py-28 bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -59,7 +73,7 @@ export function Events() {
           }}
           className="mt-10 grid sm:grid-cols-2 lg:grid-cols-2 gap-5"
         >
-          {EVENTS.map((ev) => (
+          {events.map((ev) => (
             <EventCard key={ev.title} ev={ev} />
           ))}
         </motion.div>

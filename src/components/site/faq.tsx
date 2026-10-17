@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { HelpCircle } from "lucide-react";
 import {
@@ -17,6 +18,19 @@ const fade = {
 };
 
 export function Faq() {
+  const [faqs, setFaqs] = useState(FAQS);
+
+  useEffect(() => {
+    fetch("/api/site-content", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ok && d.content?.faq && Array.isArray(d.content.faq) && d.content.faq.length > 0) {
+          setFaqs(d.content.faq as typeof FAQS);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <section id="faq" className="relative py-20 lg:py-28 bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -61,7 +75,7 @@ export function Faq() {
             variants={fade}
           >
             <Accordion type="single" collapsible className="space-y-3">
-              {FAQS.map((f, i) => (
+              {faqs.map((f, i) => (
                 <AccordionItem
                   key={i}
                   value={`item-${i}`}
