@@ -76,6 +76,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { LiveCountWidget } from "@/components/admin/live-count-widget";
+import { MEMBERSHIP_PLANS, FAQS } from "@/lib/site-data";
 
 // -----------------------------------------------------------------------------
 // Types
@@ -2708,8 +2709,8 @@ function ContentTab() {
     return (item.value as T) ?? fallback;
   };
 
-  const membershipPlans = find<PlanForm[]>("membershipPlans", []);
-  const faq = find<{ q: string; a: string }[]>("faq", []);
+  const membershipPlans = find<PlanForm[]>("membershipPlans", MEMBERSHIP_PLANS as unknown as PlanForm[]);
+  const faq = find<{ q: string; a: string }[]>("faq", FAQS);
   const about = find<{ heading?: string; body?: string[] }>("about", {
     heading: "",
     body: [],
