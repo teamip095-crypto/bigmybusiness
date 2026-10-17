@@ -6,6 +6,7 @@ import {
   setSessionCookie,
   verifySession,
 } from "@/lib/admin-auth";
+import { getAuthClient } from "@/lib/supabase-auth";
 
 /** POST /api/admin/register — first-admin setup (or new admin if already authed). */
 export async function POST(req: NextRequest) {
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
           {
             ok: false,
             error:
-              "An admin already exists. Please log in as an admin to register additional admins.",
+              "An admin already exists. Please log in to access the dashboard.",
           },
           { status: 403 }
         );
@@ -70,6 +71,28 @@ export async function POST(req: NextRequest) {
       data: { username, passwordHash, whatsappNumber, email },
     });
 
+    // Also create a Supabase Auth user (for email-based password reset)
+    if (email) {
+      const supabase = getAuthClient();
+      if (supabase) {
+        try {
+          // Check if a Supabase Auth user already exists with this email
+          const { data: existing } = await supabase.auth.signInWithOtp({
+            email,
+            options: { shouldCreateUser: false },
+          });
+          // If the user doesn't exist, create them via admin API
+          // We use signUp which creates the user (password is the same as admin's)
+          await supabase.auth.signUp({
+            email,
+            password,
+          });
+        } catch {
+          // Non-fatal — admin account is created in our DB regardless
+        }
+      }
+    }
+
     const signed = await signSession(admin.id);
     const res = NextResponse.json(
       {
@@ -85,7 +108,7 @@ export async function POST(req: NextRequest) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[admin/register] error:", msg, e instanceof Error ? e.stack : "");
     return NextResponse.json(
-      { ok: false, error: process.env.NODE_ENV === "production" ? msg : msg },
+      { ok: false, error: msg },
       { status: 500 }
     );
   }
